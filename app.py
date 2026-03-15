@@ -337,6 +337,41 @@ def get_onlyoffice_jwt_secret():
     secret = get_setting('onlyoffice_jwt_secret', '')
     return secret.strip() if secret else ''
 
+def _resolve_hostname_ips(hostname):
+    import socket
+
+    resolved_ips = set()
+    for info in socket.getaddrinfo(hostname, None):
+        ip = info[4][0]
+        if ip:
+            resolved_ips.add(ip)
+    return resolved_ips
+
+def is_allowed_onlyoffice_download_host(hostname):
+    if not hostname:
+        return False
+
+    onlyoffice_url = get_setting('onlyoffice_url', '').strip()
+    if not onlyoffice_url:
+        return False
+
+    from urllib.parse import urlparse
+
+    trusted_host = urlparse(onlyoffice_url).hostname
+    if not trusted_host:
+        return False
+
+    if hostname == trusted_host:
+        return True
+
+    try:
+        trusted_ips = _resolve_hostname_ips(trusted_host)
+        request_ips = _resolve_hostname_ips(hostname)
+    except Exception:
+        return False
+
+    return bool(trusted_ips.intersection(request_ips))
+
 def _encode_onlyoffice_jwt_segment(payload):
     raw = json.dumps(payload, ensure_ascii=False, separators=(',', ':'), sort_keys=True).encode('utf-8')
     return base64.urlsafe_b64encode(raw).rstrip(b'=').decode('ascii')
@@ -1421,6 +1456,8 @@ def onlyoffice_callback(filename):
                     parsed_ip.is_reserved or
                     parsed_ip.is_unspecified
                 ):
+                    if is_allowed_onlyoffice_download_host(hostname):
+                        continue
                     app.logger.warning(f"Blocked potential SSRF callback to {download_url} (IP: {ip})")
                     return jsonify({"error": 1, "message": "Invalid download URL"})
         except Exception as e:

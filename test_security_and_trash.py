@@ -151,6 +151,30 @@ class FileManagerSecurityTests(unittest.TestCase):
         self.assertEqual(success.get_json(), {'error': 0})
         self.assertEqual(target.read_bytes(), b'updated')
 
+    def test_onlyoffice_callback_allows_private_download_host_when_it_matches_onlyoffice_server(self):
+        target = self.uploads / 'report.txt'
+        target.write_text('old content', encoding='utf-8')
+
+        with app_module.app.app_context():
+            app_module.set_setting('onlyoffice_url', 'http://onlyoffice.internal')
+            callback_token = app_module.generate_onlyoffice_callback_token('report.txt')
+
+        def fake_getaddrinfo(hostname, *_args, **_kwargs):
+            if hostname in ('onlyoffice.internal', 'storage.internal'):
+                return [(None, None, None, None, ('10.0.0.5', 0))]
+            return [(None, None, None, None, ('93.184.216.34', 0))]
+
+        with mock.patch('socket.getaddrinfo', side_effect=fake_getaddrinfo):
+            with mock.patch('urllib.request.urlopen', return_value=DummyUrlopenResponse(b'private-ok')):
+                success = self.client.post(
+                    f'/callback/report.txt?token={callback_token}',
+                    json={'status': 2, 'url': 'http://storage.internal/file'}
+                )
+
+        self.assertEqual(success.status_code, 200)
+        self.assertEqual(success.get_json(), {'error': 0})
+        self.assertEqual(target.read_bytes(), b'private-ok')
+
     def test_admin_settings_store_onlyoffice_jwt_secret_and_editor_emits_signed_config(self):
         response = self.client.post(
             '/admin/settings',
