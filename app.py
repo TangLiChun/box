@@ -457,6 +457,37 @@ def summarize_update_step(result):
         lines.append('(no output)')
     return '\n'.join(lines)
 
+
+def parse_dirty_paths_from_porcelain(porcelain_output):
+    dirty_paths = []
+    for raw_line in (porcelain_output or '').splitlines():
+        line = raw_line.rstrip()
+        if len(line) < 4:
+            continue
+        path = line[3:]
+        if ' -> ' in path:
+            path = path.split(' -> ', 1)[1]
+        dirty_paths.append(path.strip())
+    return dirty_paths
+
+
+def is_runtime_generated_git_path(path):
+    if not path:
+        return False
+
+    normalized = path.replace('\\', '/').lstrip('./')
+    ignored_exact = {'users.db'}
+    ignored_prefixes = ('uploads/', 'notes/', 'trash/', '__pycache__/')
+
+    if normalized in ignored_exact:
+        return True
+    if normalized.startswith(ignored_prefixes):
+        return True
+    if normalized.endswith('.pyc'):
+        return True
+    return False
+
+
 def inspect_incremental_update_status(run_fetch=True):
     repo_root = find_git_repo_root(BASE_DIR)
     requirements_path = os.path.join(BASE_DIR, 'requirements.txt')
@@ -473,6 +504,8 @@ def inspect_incremental_update_status(run_fetch=True):
         'behind': 0,
         'has_updates': False,
         'dirty': False,
+        'dirty_files': [],
+        'ignored_dirty_files': [],
         'message': ''
     }
 
@@ -492,7 +525,14 @@ def inspect_incremental_update_status(run_fetch=True):
         status['branch'] = branch_result['stdout']
     if commit_result['ok']:
         status['current_commit'] = commit_result['stdout']
-    status['dirty'] = bool(dirty_result['stdout']) if dirty_result['ok'] else False
+
+    if dirty_result['ok']:
+        dirty_paths = parse_dirty_paths_from_porcelain(dirty_result['stdout'])
+        status['ignored_dirty_files'] = [path for path in dirty_paths if is_runtime_generated_git_path(path)]
+        status['dirty_files'] = [path for path in dirty_paths if not is_runtime_generated_git_path(path)]
+        status['dirty'] = bool(status['dirty_files'])
+    else:
+        status['dirty'] = False
 
     if not upstream_result['ok'] or not upstream_result['stdout']:
         status['message'] = '检测到 Git 仓库，但当前分支没有配置上游，无法执行增量更新。'
@@ -532,6 +572,8 @@ def inspect_incremental_update_status(run_fetch=True):
         status['message'] = '检测到本地未提交改动，已禁用自动升级。请先备份或提交本地修改。'
     elif status['has_updates']:
         status['message'] = f"检测到 {status['behind']} 个远端更新，可以执行增量升级。"
+        if status['ignored_dirty_files']:
+            status['message'] += '（已自动忽略运行时文件变更）'
     else:
         status['message'] = '当前已经是最新版本。'
 
@@ -669,8 +711,13 @@ def download_file(filename):
     if not safe_name or not filepath:
         abort(404)
 
-    if not is_authenticated() and not is_valid_onlyoffice_download_token(safe_name, request.args.get('token')):
-        return redirect(url_for('login'))
+    if not is_authenticated():
+        token = request.args.get('token')
+        if token:
+            if not is_valid_onlyoffice_download_token(safe_name, token):
+                return jsonify({'success': False, 'message': '无效下载令牌'}), 403
+        else:
+            return redirect(url_for('login'))
 
     return send_from_directory(app.config['UPLOAD_FOLDER'], safe_name, as_attachment=True)
 
@@ -1346,8 +1393,35 @@ def onlyoffice_callback(filename):
         try:
             with urlopen(download_url) as response:
                 if response.status == 200:
+                    payload = response.read()
+                    headers = getattr(response, 'headers', {})
+                    content_type = (headers.get('Content-Type') if hasattr(headers, 'get') else '') or ''
+                    content_type = str(content_type).lower()
+                    file_ext = os.path.splitext(safe_name)[1].lower()
+                    if (
+                        'text/html' in content_type or
+                        payload.lstrip().startswith(b'<!DOCTYPE html') or
+                        payload.lstrip().startswith(b'<html')
+                    ):
+                        app.logger.error(
+                            "ONLYOFFICE callback returned HTML instead of file for %s, URL=%s, content_type=%s",
+                            safe_name,
+                            download_url,
+                            content_type,
+                        )
+                        return jsonify({"error": 1, "message": "Invalid callback payload"}), 502
+
+                    if file_ext in {'.docx', '.xlsx', '.pptx'} and not payload.startswith(b'PK'):
+                        app.logger.error(
+                            "ONLYOFFICE callback returned unexpected binary signature for %s, URL=%s, content_type=%s",
+                            safe_name,
+                            download_url,
+                            content_type,
+                        )
+                        return jsonify({"error": 1, "message": "Invalid callback payload"}), 502
+
                     with open(filepath, 'wb') as f:
-                        f.write(response.read())
+                        f.write(payload)
                     return jsonify({"error": 0})
                 return jsonify({"error": 1, "message": "Download failed"}), 502
         except Exception as e:

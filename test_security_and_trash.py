@@ -284,6 +284,45 @@ class FileManagerSecurityTests(unittest.TestCase):
         self.assertEqual(payload['branch'], 'main')
         self.assertTrue(payload['restart_required'])
 
+
+    def test_update_status_ignores_runtime_dirty_files(self):
+        mocked_results = [
+            {'ok': True, 'command': 'git rev-parse --abbrev-ref HEAD', 'stdout': 'main', 'stderr': '', 'returncode': 0},
+            {'ok': True, 'command': 'git rev-parse --short HEAD', 'stdout': 'abc1234', 'stderr': '', 'returncode': 0},
+            {'ok': True, 'command': 'git status --porcelain', 'stdout': ' M users.db\n M __pycache__/app.cpython-314.pyc', 'stderr': '', 'returncode': 0},
+            {'ok': True, 'command': 'git rev-parse --abbrev-ref --symbolic-full-name @{u}', 'stdout': 'origin/main', 'stderr': '', 'returncode': 0},
+            {'ok': True, 'command': 'git rev-list --left-right --count HEAD...@{u}', 'stdout': '0 2', 'stderr': '', 'returncode': 0},
+            {'ok': True, 'command': 'git rev-parse --short @{u}', 'stdout': 'def5678', 'stderr': '', 'returncode': 0},
+        ]
+
+        with mock.patch.object(app_module, 'find_git_repo_root', return_value=str(self.base)):
+            with mock.patch.object(app_module, 'run_update_command', side_effect=mocked_results):
+                status = app_module.inspect_incremental_update_status(run_fetch=False)
+
+        self.assertTrue(status['supported'])
+        self.assertFalse(status['dirty'])
+        self.assertEqual(status['dirty_files'], [])
+        self.assertIn('users.db', status['ignored_dirty_files'])
+        self.assertTrue(status['has_updates'])
+
+    def test_update_status_blocks_non_runtime_dirty_files(self):
+        mocked_results = [
+            {'ok': True, 'command': 'git rev-parse --abbrev-ref HEAD', 'stdout': 'main', 'stderr': '', 'returncode': 0},
+            {'ok': True, 'command': 'git rev-parse --short HEAD', 'stdout': 'abc1234', 'stderr': '', 'returncode': 0},
+            {'ok': True, 'command': 'git status --porcelain', 'stdout': ' M app.py\n M users.db', 'stderr': '', 'returncode': 0},
+            {'ok': True, 'command': 'git rev-parse --abbrev-ref --symbolic-full-name @{u}', 'stdout': 'origin/main', 'stderr': '', 'returncode': 0},
+            {'ok': True, 'command': 'git rev-list --left-right --count HEAD...@{u}', 'stdout': '0 1', 'stderr': '', 'returncode': 0},
+            {'ok': True, 'command': 'git rev-parse --short @{u}', 'stdout': 'def5678', 'stderr': '', 'returncode': 0},
+        ]
+
+        with mock.patch.object(app_module, 'find_git_repo_root', return_value=str(self.base)):
+            with mock.patch.object(app_module, 'run_update_command', side_effect=mocked_results):
+                status = app_module.inspect_incremental_update_status(run_fetch=False)
+
+        self.assertTrue(status['dirty'])
+        self.assertIn('app.py', status['dirty_files'])
+        self.assertIn('users.db', status['ignored_dirty_files'])
+
     def test_preview_rejects_non_json_with_json_error(self):
         response = self.client.post('/api/preview', data='x', content_type='text/plain')
         self.assertEqual(response.status_code, 400)
