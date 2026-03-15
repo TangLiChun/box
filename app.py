@@ -318,6 +318,21 @@ def is_valid_onlyoffice_callback_token(filename, token):
     expected_token = generate_onlyoffice_callback_token(filename)
     return bool(token and expected_token) and hmac.compare_digest(token, expected_token)
 
+def generate_onlyoffice_download_token(filename):
+    safe_name = normalize_managed_filename(filename)
+    if not safe_name:
+        return None
+    token_payload = f"download:{safe_name}"
+    return hmac.new(
+        get_onlyoffice_callback_secret().encode('utf-8'),
+        token_payload.encode('utf-8'),
+        hashlib.sha256
+    ).hexdigest()
+
+def is_valid_onlyoffice_download_token(filename, token):
+    expected_token = generate_onlyoffice_download_token(filename)
+    return bool(token and expected_token) and hmac.compare_digest(token, expected_token)
+
 def get_onlyoffice_jwt_secret():
     secret = get_setting('onlyoffice_jwt_secret', '')
     return secret.strip() if secret else ''
@@ -650,12 +665,13 @@ def index():
 
 @app.route('/download/<filename>')
 def download_file(filename):
-    if not is_authenticated():
-        return redirect(url_for('login'))
-
     safe_name, filepath = resolve_item_path('file', filename)
     if not safe_name or not filepath:
         abort(404)
+
+    if not is_authenticated() and not is_valid_onlyoffice_download_token(safe_name, request.args.get('token')):
+        return redirect(url_for('login'))
+
     return send_from_directory(app.config['UPLOAD_FOLDER'], safe_name, as_attachment=True)
 
 @app.route('/delete/<filename>', methods=['POST'])
@@ -1210,7 +1226,12 @@ def onlyoffice_editor(filename):
     
     # In a real production app, document_url and callback_url must be accessible by ONLYOFFICE server
     # For local dev, we use request.host_url
-    document_url = url_for('download_file', filename=safe_name, _external=True)
+    document_url = url_for(
+        'download_file',
+        filename=safe_name,
+        token=generate_onlyoffice_download_token(safe_name),
+        _external=True
+    )
     callback_url = url_for(
         'onlyoffice_callback',
         filename=safe_name,
