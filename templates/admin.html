@@ -71,7 +71,18 @@
                         <i class="fa-solid fa-lock"></i> 如果你的 ONLYOFFICE 开启了 JWT 安全校验，请把相同的密钥填在这里。留空则不附加 JWT 签名。
                     </small>
                 </div>
-                <button type="submit" class="btn btn-primary" style="width: auto;">保存设置</button>
+                <div class="form-group">
+                    <label>回调地址（可选，解决保存失败）</label>
+                    <input type="text" name="onlyoffice_callback_base" value="{{ onlyoffice_callback_base }}" placeholder="例如: http://192.168.1.50:5000">
+                    <small style="color: #94a3b8; display: block; margin-top: 0.5rem;">
+                        <i class="fa-solid fa-circle-info"></i> 如果 ONLYOFFICE 服务器无法通过浏览器地址回连本应用（例如 Docker/NAT 环境），请填写 ONLYOFFICE 能访问到本应用的地址。留空则自动使用浏览器地址。
+                    </small>
+                </div>
+                <div style="display: flex; gap: 0.75rem; align-items: center;">
+                    <button type="submit" class="btn btn-primary" style="width: auto;">保存设置</button>
+                    <button type="button" id="testOOBtn" class="btn btn-outline" style="width: auto; color: var(--accent-2);" onclick="testOnlyofficeConnection()"><i class="fa-solid fa-plug-circle-check"></i> 测试连接</button>
+                    <span id="testOOResult" style="font-size: 0.9rem; color: #94a3b8;"></span>
+                </div>
             </form>
         </div>
 
@@ -251,6 +262,26 @@
                 showToast("网络请求错误", 'error');
             }
         });
+
+        async function testOnlyofficeConnection() {
+            const btn = document.getElementById('testOOBtn');
+            const result = document.getElementById('testOOResult');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 测试中';
+            result.textContent = '';
+            try {
+                const response = await fetch('/admin/onlyoffice/test');
+                const data = await response.json();
+                result.textContent = data.message;
+                result.style.color = data.success ? 'var(--success)' : 'var(--danger)';
+            } catch(e) {
+                result.textContent = '网络请求失败';
+                result.style.color = 'var(--danger)';
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-plug-circle-check"></i> 测试连接';
+            }
+        }
 
         let latestUpdateStatus = null;
 

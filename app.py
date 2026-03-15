@@ -12,6 +12,11 @@ import json
 import base64
 import subprocess
 import sys
+import html
+import socket
+import tempfile
+from urllib.parse import urlparse
+import urllib.request
 from datetime import datetime, timezone
 from flask import Flask, render_template, request, redirect, url_for, session, send_from_directory, flash, jsonify, g, abort
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -24,13 +29,19 @@ def secure_filename(filename):
     filename = os.path.basename(filename)
     # 若还是有反斜杠等，再进行一层替换
     filename = filename.replace('/', '').replace('\\', '').replace('..', '')
+    # 去除 Windows 非法文件名字符
+    for ch in '<>:"|?*':
+        filename = filename.replace(ch, '_')
+    # 去除控制字符 (ASCII 0-31)
+    filename = ''.join(c for c in filename if ord(c) > 31)
+    filename = filename.strip('. ')
     if not filename:
         return 'unnamed'
     return filename
 
 app = Flask(__name__)
 # Generate a secret key for session management
-app.secret_key = 'super_secret_premium_key_for_file_manager_system_only_for_dev'
+app.secret_key = os.getenv('SECRET_KEY', secrets.token_hex(32))
 
 # Configuration
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -902,20 +913,30 @@ def edit_note(filename):
         if new_filename != safe_name and os.path.exists(new_filepath):
              return jsonify({'success': False, 'message': '已存在同名笔记'})
              
-        with open(new_filepath, 'w', encoding='utf-8') as f:
-            f.write(content)
-            
         if new_filename != safe_name:
+            # 先写入新的文件
+            with open(new_filepath, 'w', encoding='utf-8') as f:
+                f.write(content)
+            # 再尝试删除旧文件
             try:
                 if os.path.exists(filepath):
                     os.remove(filepath)
             except OSError as e:
-                # If file is locked or doesn't exist anymore, log/ignore
-                pass
-            # update share links if file renamed (in a real app you might cascade this)
+                # 旧文件删除失败时，回滚：删除新文件，保留旧文件
+                app.logger.error(f"Failed to remove old note {safe_name}: {e}")
+                try:
+                    os.remove(new_filepath)
+                except OSError:
+                    pass
+                return jsonify({'success': False, 'message': '重命名失败，旧文件无法删除'}), 500
+            # update share links
             db = get_db()
             db.execute('UPDATE shares SET target_filename=? WHERE type="note" AND target_filename=?', (new_filename, safe_name))
             db.commit()
+        else:
+            # 文件名不变，直接覆盖写入
+            with open(new_filepath, 'w', encoding='utf-8') as f:
+                f.write(content)
             
         return jsonify({'success': True, 'redirect': url_for('view_note', filename=new_filename)})
         
@@ -937,7 +958,6 @@ def view_note(filename):
         content = f.read()
         
     # Basic XSS protection: escape HTML tags before markdown rendering
-    import html
     escaped_content = html.escape(content)
     html_content = markdown.markdown(escaped_content, extensions=['fenced_code', 'tables'])
     return render_template('note_view.html', title=safe_name[:-3], content=html_content, filename=safe_name, current_user=session['username'])
@@ -961,12 +981,14 @@ def admin():
     users = db.execute('SELECT id, username FROM users').fetchall()
     onlyoffice_url = get_setting('onlyoffice_url', '')
     onlyoffice_jwt_secret = get_onlyoffice_jwt_secret()
+    onlyoffice_callback_base = get_setting('onlyoffice_callback_base', '')
     return render_template(
         'admin.html',
         users=users,
         current_user=session['username'],
         onlyoffice_url=onlyoffice_url,
-        onlyoffice_jwt_secret=onlyoffice_jwt_secret
+        onlyoffice_jwt_secret=onlyoffice_jwt_secret,
+        onlyoffice_callback_base=onlyoffice_callback_base
     )
 
 @app.route('/admin/settings', methods=['POST'])
@@ -974,12 +996,34 @@ def admin():
 def update_settings():
     onlyoffice_url = request.form.get('onlyoffice_url', '').strip()
     onlyoffice_jwt_secret = request.form.get('onlyoffice_jwt_secret', '').strip()
+    onlyoffice_callback_base = request.form.get('onlyoffice_callback_base', '').strip()
     if onlyoffice_url and not onlyoffice_url.startswith(('http://', 'https://')):
         return jsonify({'success': False, 'message': '请输入有效的 URL (以 http:// 或 https:// 开头)'})
+    if onlyoffice_callback_base and not onlyoffice_callback_base.startswith(('http://', 'https://')):
+        return jsonify({'success': False, 'message': '回调地址必须以 http:// 或 https:// 开头'})
     
     set_setting('onlyoffice_url', onlyoffice_url)
     set_setting('onlyoffice_jwt_secret', onlyoffice_jwt_secret)
+    set_setting('onlyoffice_callback_base', onlyoffice_callback_base)
     return jsonify({'success': True, 'message': '设置已更新'})
+
+@app.route('/admin/onlyoffice/test')
+@admin_required
+def test_onlyoffice_connection():
+    onlyoffice_url = get_setting('onlyoffice_url', '')
+    if not onlyoffice_url:
+        return jsonify({'success': False, 'message': 'ONLYOFFICE 地址未配置'})
+    
+    test_url = onlyoffice_url.rstrip('/') + '/healthcheck'
+    try:
+        req = urllib.request.Request(test_url, method='GET')
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            body = resp.read().decode('utf-8', errors='replace').strip()
+            if resp.status == 200 and body.lower() == 'true':
+                return jsonify({'success': True, 'message': f'连接成功 ✓ ({test_url})'})
+            return jsonify({'success': False, 'message': f'服务器返回异常: HTTP {resp.status}, body={body[:200]}'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'连接失败: {str(e)}'})
 
 @app.route('/admin/update/status')
 @admin_required
@@ -1072,11 +1116,16 @@ def create_share():
     if existing:
         return jsonify({'success': True, 'share_id': existing['id']})
 
-    share_id = generate_short_id()
-    db.execute('INSERT INTO shares (id, type, target_filename) VALUES (?, ?, ?)', (share_id, item_type, safe_name))
-    db.commit()
+    for _ in range(5):
+        share_id = generate_short_id()
+        try:
+            db.execute('INSERT INTO shares (id, type, target_filename) VALUES (?, ?, ?)', (share_id, item_type, safe_name))
+            db.commit()
+            return jsonify({'success': True, 'share_id': share_id})
+        except sqlite3.IntegrityError:
+            continue
 
-    return jsonify({'success': True, 'share_id': share_id})
+    return jsonify({'success': False, 'message': '生成分享链接失败，请重试'}), 500
 
 @app.route('/share/revoke', methods=['POST'])
 def revoke_share():
@@ -1123,7 +1172,6 @@ def public_share_note(share_id):
         content = f.read()
         
     # Basic XSS protection: escape HTML tags before markdown rendering
-    import html
     escaped_content = html.escape(content)
     html_content = markdown.markdown(escaped_content, extensions=['fenced_code', 'tables'])
     # Serve a clean public viewing template
@@ -1144,7 +1192,7 @@ def auto_cleanup_trash():
         for filename in os.listdir(TRASH_FOLDER):
             file_path = os.path.join(TRASH_FOLDER, filename)
             if os.path.isfile(file_path):
-                file_age = now - os.path.getctime(file_path)
+                file_age = now - os.path.getmtime(file_path)
                 if file_age > cleanup_threshold:
                     os.remove(file_path)
                     removed_names.append(filename)
@@ -1309,20 +1357,30 @@ def onlyoffice_editor(filename):
     key_seed = f"{safe_name}:{int(stat.st_mtime)}"
     doc_key = f"doc_{hashlib.sha256(key_seed.encode('utf-8')).hexdigest()[:32]}"
     
-    # In a real production app, document_url and callback_url must be accessible by ONLYOFFICE server
-    # For local dev, we use request.host_url
-    document_url = url_for(
-        'download_file',
-        filename=safe_name,
-        token=generate_onlyoffice_download_token(safe_name),
-        _external=True
-    )
-    callback_url = url_for(
-        'onlyoffice_callback',
-        filename=safe_name,
-        token=generate_onlyoffice_callback_token(safe_name),
-        _external=True
-    )
+    # Build document_url and callback_url.
+    # If a callback_base is configured, use it so ONLYOFFICE can reach our app
+    # through NAT/reverse-proxy. Otherwise, fall back to url_for(_external).
+    callback_base = get_setting('onlyoffice_callback_base', '').rstrip('/')
+    if callback_base:
+        dl_token = generate_onlyoffice_download_token(safe_name)
+        cb_token = generate_onlyoffice_callback_token(safe_name)
+        from werkzeug.urls import url_quote
+        encoded_name = url_quote(safe_name)
+        document_url = f"{callback_base}/download/{encoded_name}?token={dl_token}"
+        callback_url = f"{callback_base}/callback/{encoded_name}?token={cb_token}"
+    else:
+        document_url = url_for(
+            'download_file',
+            filename=safe_name,
+            token=generate_onlyoffice_download_token(safe_name),
+            _external=True
+        )
+        callback_url = url_for(
+            'onlyoffice_callback',
+            filename=safe_name,
+            token=generate_onlyoffice_callback_token(safe_name),
+            _external=True
+        )
     
     config = {
         'document': {
@@ -1399,37 +1457,45 @@ def onlyoffice_callback(filename):
         if not download_url:
             return jsonify({"error": 1, "message": "Missing download URL"}), 400
 
-        # SSRF Protection: Validate URL
-        from urllib.parse import urlparse
-        import socket
+        # SSRF Protection: Validate URL, but whitelist the configured ONLYOFFICE server
         parsed_url = urlparse(download_url)
         if parsed_url.scheme not in ('http', 'https'):
             return jsonify({"error": 1, "message": "Invalid download URL"}), 400
+
+        # Build set of trusted hostnames from ONLYOFFICE server configuration
+        trusted_hostnames = set()
+        configured_oo_url = get_setting('onlyoffice_url', '')
+        if configured_oo_url:
+            parsed_oo = urlparse(configured_oo_url)
+            if parsed_oo.hostname:
+                trusted_hostnames.add(parsed_oo.hostname.lower())
 
         try:
             hostname = parsed_url.hostname
             if not hostname:
                  return jsonify({"error": 1, "message": "Invalid URL hostname"})
-            resolved_ips = {info[4][0] for info in socket.getaddrinfo(hostname, None)}
-            for ip in resolved_ips:
-                parsed_ip = ipaddress.ip_address(ip)
-                if (
-                    parsed_ip.is_private or
-                    parsed_ip.is_loopback or
-                    parsed_ip.is_link_local or
-                    parsed_ip.is_multicast or
-                    parsed_ip.is_reserved or
-                    parsed_ip.is_unspecified
-                ):
-                    app.logger.warning(f"Blocked potential SSRF callback to {download_url} (IP: {ip})")
-                    return jsonify({"error": 1, "message": "Invalid download URL"})
+            # Skip SSRF check if the download URL points to the configured ONLYOFFICE server
+            is_trusted = hostname.lower() in trusted_hostnames
+            if not is_trusted:
+                resolved_ips = {info[4][0] for info in socket.getaddrinfo(hostname, None)}
+                for ip in resolved_ips:
+                    parsed_ip = ipaddress.ip_address(ip)
+                    if (
+                        parsed_ip.is_private or
+                        parsed_ip.is_loopback or
+                        parsed_ip.is_link_local or
+                        parsed_ip.is_multicast or
+                        parsed_ip.is_reserved or
+                        parsed_ip.is_unspecified
+                    ):
+                        app.logger.warning(f"Blocked potential SSRF callback to {download_url} (IP: {ip})")
+                        return jsonify({"error": 1, "message": "Invalid download URL"})
         except Exception as e:
             app.logger.error(f"SSRF validation error: {e}")
             return jsonify({"error": 1}), 502
 
-        from urllib.request import urlopen
         try:
-            with urlopen(download_url) as response:
+            with urllib.request.urlopen(download_url, timeout=30) as response:
                 if response.status == 200:
                     payload = response.read()
                     headers = getattr(response, 'headers', {})
@@ -1458,8 +1524,26 @@ def onlyoffice_callback(filename):
                         )
                         return jsonify({"error": 1, "message": "Invalid callback payload"}), 502
 
-                    with open(filepath, 'wb') as f:
-                        f.write(payload)
+                    # Atomic write: write to temp file, then replace
+                    dir_name = os.path.dirname(filepath)
+                    fd, tmp_path = tempfile.mkstemp(dir=dir_name)
+                    fd_closed = False
+                    try:
+                        os.write(fd, payload)
+                        os.close(fd)
+                        fd_closed = True
+                        os.replace(tmp_path, filepath)
+                    except Exception:
+                        if not fd_closed:
+                            try:
+                                os.close(fd)
+                            except OSError:
+                                pass
+                        try:
+                            os.remove(tmp_path)
+                        except OSError:
+                            pass
+                        raise
                     return jsonify({"error": 0})
                 return jsonify({"error": 1, "message": "Download failed"}), 502
         except Exception as e:
@@ -1481,7 +1565,6 @@ def render_preview():
     content = data.get('content', '')
     if not isinstance(content, str):
         content = '' if content is None else str(content)
-    import html
     escaped_content = html.escape(content)
     html_content = markdown.markdown(escaped_content, extensions=['fenced_code', 'tables'])
     return jsonify({'success': True, 'html': html_content})
