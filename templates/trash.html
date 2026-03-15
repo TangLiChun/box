@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>回收站 - NexFile</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <div class="app-layout">
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <h1 class="gradient-text" style="font-size: 1.8rem; margin: 0;"><i class="fa-solid fa-layer-group"></i> NexFile</h1>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a href="{{ url_for('index') }}" class="side-link"><i class="fa-solid fa-folder-open"></i> <span>文件管理</span></a>
+                <a href="{{ url_for('notes') }}" class="side-link"><i class="fa-solid fa-book"></i> <span>笔记管理</span></a>
+                <a href="{{ url_for('view_trash') }}" class="side-link active"><i class="fa-solid fa-trash-can"></i> <span>回收站</span></a>
+                <a href="{{ url_for('game') }}" class="side-link"><i class="fa-solid fa-dharmachakra"></i> <span>幸运转盘</span></a>
+                <a href="{{ url_for('admin') }}" class="side-link"><i class="fa-solid fa-users-gear"></i> <span>后台管理</span></a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div style="margin-bottom: 1rem; color: #94a3b8; font-size: 0.85rem;">
+                    <i class="fa-solid fa-circle-user"></i> <span>{{ current_user }}</span>
+                </div>
+                <a href="{{ url_for('logout') }}" class="side-link" style="color: var(--danger);"><i class="fa-solid fa-sign-out-alt"></i> <span>退出登录</span></a>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="container">
+                <div class="glass-panel" style="margin-bottom: 2rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <h2 style="margin: 0;"><i class="fa-solid fa-trash-can"></i> 回收站</h2>
+                        <div style="display: flex; gap: 1rem; align-items: center;">
+                             <div class="search-container">
+                                <i class="fa-solid fa-search search-icon"></i>
+                                <input type="text" id="trashSearch" class="search-input" placeholder="搜索已删除项目...">
+                            </div>
+                            <button onclick="clearTrash()" class="btn btn-danger" style="width: auto;"><i class="fa-solid fa-broom"></i> 清空回收站</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-panel">
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>文件名</th>
+                                    <th>大小</th>
+                                    <th>删除时间</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="trashTableBody">
+                                {% if items %}
+                                    {% for item in items %}
+                                    <tr>
+                                        <td class="file-name-cell" data-item-type="{{ item.item_type }}" data-filename="{{ item.name }}">
+                                            <span class="trash-icon-wrapper"></span>
+                                            <span class="file-name-text">{{ item.name }}</span>
+                                        </td>
+                                        <td>{{ item.size }}</td>
+                                        <td>{{ item.deleted_at }}</td>
+                                        <td class="actions">
+                                            <button onclick='restoreItem({{ item.trash_name|tojson }}, {{ item.item_type|tojson }}, {{ item.name|tojson }}, this)' class="btn btn-sm btn-outline" style="color: var(--success);" title="还原"><i class="fa-solid fa-rotate-left"></i></button>
+                                            <button onclick='permanentDelete({{ item.trash_name|tojson }}, {{ item.name|tojson }}, this)' class="btn btn-sm btn-danger" title="彻底删除"><i class="fa-solid fa-trash"></i></button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr id="emptyRow">
+                                        <td colspan="4" style="text-align: center; color: #94a3b8; padding: 3rem;">
+                                            <i class="fa-solid fa-trash-arrow-up" style="font-size: 3rem; opacity: 0.2; margin-bottom: 1rem; display: block;"></i>
+                                            回收站目前是空的
+                                        </td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <div class="modal-overlay" id="restoreTypeModal">
+        <div class="modal glass-panel" style="max-width: 460px;">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-arrows-rotate"></i> 选择恢复位置</h3>
+                <button class="close-btn" onclick="closeRestoreTypeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-top: 0; color: #cbd5e1; line-height: 1.7;">
+                    这个旧的 Markdown 回收站条目缺少来源信息，恢复前需要确认它原本是普通文件还是笔记。
+                </p>
+                <div class="glass-panel" style="padding: 0.9rem 1rem; margin-bottom: 1rem;">
+                    <div style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 0.35rem;">当前条目</div>
+                    <div id="restoreTargetName" style="word-break: break-all;"></div>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem;">
+                    <button type="button" class="btn btn-outline" style="width: 100%;" onclick="confirmRestoreType('file')">
+                        <i class="fa-solid fa-file"></i> 恢复为文件
+                    </button>
+                    <button type="button" class="btn btn-outline" style="width: 100%;" onclick="confirmRestoreType('note')">
+                        <i class="fa-solid fa-note-sticky"></i> 恢复为笔记
+                    </button>
+                </div>
+                <div style="margin-top: 1rem; text-align: right;">
+                    <button type="button" class="btn btn-outline btn-sm" style="width: auto;" onclick="closeRestoreTypeModal()">取消</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="confirmActionModal">
+        <div class="modal glass-panel" style="max-width: 460px;">
+            <div class="modal-header">
+                <h3 id="confirmActionTitle"><i class="fa-solid fa-triangle-exclamation"></i> 确认操作</h3>
+                <button class="close-btn" onclick="closeConfirmActionModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="confirmActionMessage" style="margin-top: 0; color: #cbd5e1; line-height: 1.7;"></p>
+                <div id="confirmActionTargetBox" class="glass-panel" style="padding: 0.9rem 1rem; margin-bottom: 1rem;">
+                    <div style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 0.35rem;">目标</div>
+                    <div id="confirmActionTargetName" style="word-break: break-all;"></div>
+                </div>
+                <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+                    <button type="button" class="btn btn-outline btn-sm" style="width: auto;" onclick="closeConfirmActionModal()">取消</button>
+                    <button type="button" id="confirmActionButton" class="btn btn-danger btn-sm" style="width: auto;" onclick="confirmPendingAction()">确认</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let pendingRestoreRequest = null;
+        let pendingConfirmAction = null;
+
+        function getTrashIcon(itemType, filename) {
+            const ext = filename.includes('.') ? filename.split('.').pop().toLowerCase() : '';
+            if (itemType === 'note') {
+                return { icon: 'fa-brands fa-markdown', color: '#0ea5e9' };
+            }
+            if (itemType === 'unknown') {
+                return { icon: 'fa-solid fa-circle-question', color: '#f59e0b' };
+            }
+
+            const iconMap = {
+                pdf: { icon: 'fa-solid fa-file-pdf', color: '#f43f5e' },
+                doc: { icon: 'fa-solid fa-file-word', color: '#2b579a' },
+                docx: { icon: 'fa-solid fa-file-word', color: '#2b579a' },
+                xls: { icon: 'fa-solid fa-file-excel', color: '#217346' },
+                xlsx: { icon: 'fa-solid fa-file-excel', color: '#217346' },
+                ppt: { icon: 'fa-solid fa-file-powerpoint', color: '#d24726' },
+                pptx: { icon: 'fa-solid fa-file-powerpoint', color: '#d24726' },
+                zip: { icon: 'fa-solid fa-file-archive', color: '#f59e0b' },
+                rar: { icon: 'fa-solid fa-file-archive', color: '#f59e0b' },
+                '7z': { icon: 'fa-solid fa-file-archive', color: '#f59e0b' },
+                jpg: { icon: 'fa-solid fa-file-image', color: '#ec4899' },
+                jpeg: { icon: 'fa-solid fa-file-image', color: '#ec4899' },
+                png: { icon: 'fa-solid fa-file-image', color: '#ec4899' },
+                gif: { icon: 'fa-solid fa-file-image', color: '#ec4899' },
+                webp: { icon: 'fa-solid fa-file-image', color: '#ec4899' },
+                mp4: { icon: 'fa-solid fa-file-video', color: '#8b5cf6' },
+                webm: { icon: 'fa-solid fa-file-video', color: '#8b5cf6' },
+                mp3: { icon: 'fa-solid fa-file-audio', color: '#06b6d4' },
+                txt: { icon: 'fa-solid fa-file-lines', color: '#94a3b8' },
+                md: { icon: 'fa-solid fa-file-lines', color: '#94a3b8' }
+            };
+            return iconMap[ext] || { icon: 'fa-solid fa-file', color: '#94a3b8' };
+        }
+
+        function refreshTrashIcons() {
+            document.querySelectorAll('.file-name-cell').forEach(cell => {
+                const wrapper = cell.querySelector('.trash-icon-wrapper');
+                if (!wrapper) return;
+                const iconData = getTrashIcon(cell.dataset.itemType, cell.dataset.filename || '');
+                wrapper.innerHTML = `<i class="${iconData.icon}" style="color: ${iconData.color}; margin-right: 0.75rem; width: 20px; text-align: center;"></i>`;
+            });
+        }
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            const icon = type === 'success' ? '<i class="fa-solid fa-circle-check"></i>' : '<i class="fa-solid fa-circle-exclamation"></i>';
+            toast.innerHTML = `${icon} <span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.add('show'), 10);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        function openRestoreTypeModal(filename, displayName, btn) {
+            pendingRestoreRequest = { filename, displayName, btn };
+            document.getElementById('restoreTargetName').textContent = displayName;
+            document.getElementById('restoreTypeModal').classList.add('active');
+        }
+
+        function closeRestoreTypeModal() {
+            pendingRestoreRequest = null;
+            document.getElementById('restoreTypeModal').classList.remove('active');
+        }
+
+        function openConfirmActionModal({ title, message, targetName = '', confirmLabel, confirmClass = 'btn-danger', onConfirm }) {
+            pendingConfirmAction = onConfirm;
+            document.getElementById('confirmActionTitle').innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> ${title}`;
+            document.getElementById('confirmActionMessage').textContent = message;
+            document.getElementById('confirmActionTargetName').textContent = targetName;
+            document.getElementById('confirmActionTargetBox').style.display = targetName ? 'block' : 'none';
+
+            const button = document.getElementById('confirmActionButton');
+            button.textContent = confirmLabel;
+            button.className = `btn ${confirmClass} btn-sm`;
+            button.style.width = 'auto';
+
+            document.getElementById('confirmActionModal').classList.add('active');
+        }
+
+        function closeConfirmActionModal() {
+            pendingConfirmAction = null;
+            document.getElementById('confirmActionModal').classList.remove('active');
+        }
+
+        async function confirmPendingAction() {
+            if (!pendingConfirmAction) return;
+            const action = pendingConfirmAction;
+            closeConfirmActionModal();
+            await action();
+        }
+
+        async function sendRestoreRequest(filename, restoreType, btn) {
+            try {
+                const response = await fetch(`/trash/restore/${encodeURIComponent(filename)}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ item_type: restoreType })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    showToast(result.message, 'success');
+                    btn.closest('tr').remove();
+                    checkEmpty();
+                    refreshTrashIcons();
+                } else {
+                    showToast(result.message, 'error');
+                }
+            } catch (e) {
+                showToast("连接服务器失败", 'error');
+            }
+        }
+
+        function confirmRestoreType(restoreType) {
+            if (!pendingRestoreRequest) return;
+            const request = pendingRestoreRequest;
+            closeRestoreTypeModal();
+            sendRestoreRequest(request.filename, restoreType, request.btn);
+        }
+
+        async function restoreItem(filename, itemType, displayName, btn) {
+            let restoreType = itemType;
+            if (itemType === 'unknown') {
+                openRestoreTypeModal(filename, displayName, btn);
+                return;
+            }
+
+            await sendRestoreRequest(filename, restoreType, btn);
+        }
+
+        async function sendPermanentDeleteRequest(filename, btn) {
+            try {
+                const response = await fetch(`/trash/delete/${encodeURIComponent(filename)}`, { method: 'POST' });
+                const result = await response.json();
+                if (result.success) {
+                    showToast(result.message, 'success');
+                    btn.closest('tr').remove();
+                    checkEmpty();
+                    refreshTrashIcons();
+                } else {
+                    showToast(result.message, 'error');
+                }
+            } catch (e) {
+                showToast("连接服务器失败", 'error');
+            }
+        }
+
+        function permanentDelete(filename, displayName, btn) {
+            openConfirmActionModal({
+                title: '永久删除',
+                message: '确定要永久删除这个项目吗？此操作无法撤销。',
+                targetName: displayName,
+                confirmLabel: '永久删除',
+                confirmClass: 'btn-danger',
+                onConfirm: () => sendPermanentDeleteRequest(filename, btn)
+            });
+        }
+
+        async function sendClearTrashRequest() {
+            try {
+                const response = await fetch('/trash/clear', { method: 'POST' });
+                const result = await response.json();
+                if (result.success) {
+                    showToast(result.message, 'success');
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showToast(result.message, 'error');
+                }
+            } catch (e) {
+                showToast("连接服务器失败", 'error');
+            }
+        }
+
+        function clearTrash() {
+            openConfirmActionModal({
+                title: '清空回收站',
+                message: '确定要清空回收站中的所有项目吗？此操作无法撤销。',
+                targetName: '回收站中的所有项目',
+                confirmLabel: '立即清空',
+                confirmClass: 'btn-danger',
+                onConfirm: () => sendClearTrashRequest()
+            });
+        }
+
+        function checkEmpty() {
+            const tbody = document.getElementById('trashTableBody');
+            if (tbody.querySelectorAll('tr').length === 0) {
+                tbody.innerHTML = '<tr id="emptyRow"><td colspan="4" style="text-align: center; color: #94a3b8; padding: 3rem;"><i class="fa-solid fa-trash-arrow-up" style="font-size: 3rem; opacity: 0.2; margin-bottom: 1rem; display: block;"></i>回收站目前是空的</td></tr>';
+            }
+        }
+
+        // Search Logic
+        document.getElementById('trashSearch').addEventListener('input', function(e) {
+            const term = e.target.value.toLowerCase();
+            const rows = document.querySelectorAll('#trashTableBody tr:not(#emptyRow)');
+            rows.forEach(row => {
+                const name = row.querySelector('.file-name-text').textContent.toLowerCase();
+                row.style.display = name.includes(term) ? '' : 'none';
+            });
+        });
+
+        document.getElementById('restoreTypeModal').addEventListener('click', function(e) {
+            if (e.target === this) closeRestoreTypeModal();
+        });
+
+        document.getElementById('confirmActionModal').addEventListener('click', function(e) {
+            if (e.target === this) closeConfirmActionModal();
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key !== 'Escape') return;
+            if (document.getElementById('restoreTypeModal').classList.contains('active')) {
+                closeRestoreTypeModal();
+            }
+            if (document.getElementById('confirmActionModal').classList.contains('active')) {
+                closeConfirmActionModal();
+            }
+        });
+
+        refreshTrashIcons();
+    </script>
+</body>
+</html>

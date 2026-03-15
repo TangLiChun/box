@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>后台管理 - NexFile</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="app-layout">
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <h1 class="gradient-text" style="font-size: 1.8rem; margin: 0;"><i class="fa-solid fa-layer-group"></i> NexFile</h1>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a href="{{ url_for('index') }}" class="side-link"><i class="fa-solid fa-folder-open"></i> <span>文件管理</span></a>
+                <a href="{{ url_for('notes') }}" class="side-link"><i class="fa-solid fa-book"></i> <span>笔记管理</span></a>
+                <a href="{{ url_for('view_trash') }}" class="side-link"><i class="fa-solid fa-trash-can"></i> <span>回收站</span></a>
+                <a href="{{ url_for('game') }}" class="side-link"><i class="fa-solid fa-dharmachakra"></i> <span>幸运转盘</span></a>
+                <a href="{{ url_for('admin') }}" class="side-link active"><i class="fa-solid fa-users-gear"></i> <span>后台管理</span></a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div style="margin-bottom: 1rem; color: #94a3b8; font-size: 0.85rem;">
+                    <i class="fa-solid fa-circle-user"></i> <span>{{ current_user }}</span>
+                </div>
+                <a href="{{ url_for('logout') }}" class="side-link" style="color: var(--danger);"><i class="fa-solid fa-sign-out-alt"></i> <span>退出登录</span></a>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="container">
+
+        <div class="glass-panel" style="margin-bottom: 2rem;">
+            <h2><i class="fa-solid fa-user-plus"></i> 添加新用户</h2>
+            <form id="addUserForm" style="display: flex; gap: 1rem; align-items: flex-end;">
+                <div class="form-group" style="margin-bottom: 0; flex: 1;">
+                    <label>用户名</label>
+                    <input type="text" name="username" required placeholder="输入新用户名">
+                </div>
+                <div class="form-group" style="margin-bottom: 0; flex: 1;">
+                    <label>密码</label>
+                    <input type="password" name="password" required placeholder="输入密码">
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: auto;">添加用户</button>
+            </form>
+        </div>
+        
+        <div class="glass-panel" style="margin-bottom: 2rem;">
+            <h2><i class="fa-solid fa-gear"></i> 系统设置</h2>
+            <form id="settingsForm">
+                <div class="form-group">
+                    <label>ONLYOFFICE Document Server 地址</label>
+                    <input type="text" name="onlyoffice_url" value="{{ onlyoffice_url }}" placeholder="例如: http://192.168.1.100:8080">
+                    <small style="color: #94a3b8; display: block; margin-top: 0.5rem;">
+                        <i class="fa-solid fa-circle-info"></i> 填写地址后将启用 Office 文档（docx, xlsx, pptx）在线编辑功能。留空则禁用。
+                    </small>
+                </div>
+                <div class="form-group">
+                    <label>ONLYOFFICE JWT 密钥（可选）</label>
+                    <input
+                        type="password"
+                        name="onlyoffice_jwt_secret"
+                        value="{{ onlyoffice_jwt_secret }}"
+                        placeholder="填写与 Document Server 保持一致的 JWT 密钥"
+                        autocomplete="new-password"
+                    >
+                    <small style="color: #94a3b8; display: block; margin-top: 0.5rem;">
+                        <i class="fa-solid fa-lock"></i> 如果你的 ONLYOFFICE 开启了 JWT 安全校验，请把相同的密钥填在这里。留空则不附加 JWT 签名。
+                    </small>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: auto;">保存设置</button>
+            </form>
+        </div>
+
+        <div class="glass-panel" style="margin-bottom: 2rem;">
+            <h2><i class="fa-solid fa-arrows-rotate"></i> 增量更新</h2>
+            <p style="margin-top: 0; color: #94a3b8; line-height: 1.7;">
+                这个入口只支持 Git 部署下的增量升级。系统会检查远端提交，确认可升级后执行
+                <code>git pull --ff-only</code>，并尝试同步安装 <code>requirements.txt</code> 里的依赖。
+                如果当前目录不是 Git 仓库，或者存在本地未提交修改，升级按钮会自动禁用。
+            </p>
+            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; margin-bottom: 1rem;">
+                <button type="button" id="checkUpdateBtn" class="btn btn-outline" style="width: auto; color: var(--accent-2);">
+                    <i class="fa-solid fa-rotate"></i> 检查更新
+                </button>
+                <button type="button" id="applyUpdateBtn" class="btn btn-primary" style="width: auto;" disabled>
+                    <i class="fa-solid fa-cloud-arrow-down"></i> 执行升级
+                </button>
+                <span id="updateStatusText" style="color: #94a3b8; font-size: 0.95rem;">尚未检查更新</span>
+            </div>
+            <div id="updateMeta" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem; margin-bottom: 1rem;"></div>
+            <pre id="updateOutput" class="hex-preview" style="display: none; margin-top: 0; white-space: pre-wrap; word-break: break-word;"></pre>
+        </div>
+
+        <div class="glass-panel">
+            <h2><i class="fa-solid fa-users"></i> 用户列表</h2>
+            <div class="table-responsive">
+                <table id="userTable">
+                    <thead>
+                        <tr>
+                            <th onclick="sortTable(0, 'userTable')" style="cursor: pointer;">ID <i class="fa-solid fa-sort"></i></th>
+                            <th onclick="sortTable(1, 'userTable')" style="cursor: pointer;">用户名 <i class="fa-solid fa-sort"></i></th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                        <tr id="user-row-{{ user.id }}">
+                            <td>{{ user.id }}</td>
+                            <td><i class="fa-solid fa-user" style="color: var(--accent-1);"></i> {{ user.username }} {% if user.username == current_user %}<span style="font-size: 0.8rem; color: var(--success);">(您)</span>{% endif %}</td>
+                            <td class="actions">
+                                <button onclick='openPasswordModal({{ user.id }}, {{ user.username|tojson }})' class="btn btn-sm btn-outline" style="color: var(--accent-2);" title="修改密码"><i class="fa-solid fa-key"></i> 修改密码</button>
+                                {% if user.username != current_user %}
+                                <button onclick='deleteUser({{ user.id }}, {{ user.username|tojson }})' class="btn btn-sm btn-danger" title="删除用户"><i class="fa-solid fa-user-xmark"></i> 删除</button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Password Modal -->
+    <div class="modal-overlay" id="passwordModal">
+        <div class="modal glass-panel" style="max-width: 400px;">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-key"></i> 修改密码 <span id="pwdTargetUser" style="color: var(--accent-1);"></span></h3>
+                <button class="close-btn" onclick="closePasswordModal()">&times;</button>
+            </div>
+            <form id="passwordForm">
+                <input type="hidden" id="pwdUserId" name="user_id">
+                <div class="form-group">
+                    <label>新密码</label>
+                    <input type="password" name="new_password" required placeholder="输入新密码">
+                </div>
+                <button type="submit" class="btn btn-primary">确认修改</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <script>
+        // Toast function
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            
+            const icon = type === 'success' ? '<i class="fa-solid fa-circle-check"></i>' : '<i class="fa-solid fa-circle-exclamation"></i>';
+            toast.innerHTML = `${icon} <span>${message}</span>`;
+            
+            container.appendChild(toast);
+            
+            // Trigger animation
+            setTimeout(() => toast.classList.add('show'), 10);
+            
+            // Remove after 3s
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Add User
+        document.getElementById('addUserForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            try {
+                const response = await fetch('/admin/users/add', { method: 'POST', body: formData });
+                const result = await response.json();
+                if(result.success) {
+                    showToast(result.message, 'success');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showToast(result.message, 'error');
+                }
+            } catch(e) {
+                showToast("网络请求错误", 'error');
+            }
+        });
+
+        // Delete User
+        async function deleteUser(id, username) {
+            // Replaced alert with custom confirmation prompt (could be improved further with a custom modal, using browser confirm for now for safety but styled in future)
+            if(confirm(`警告：您确定要永久删除用户 ${username} 吗？`)) {
+                try {
+                    const response = await fetch(`/admin/users/delete/${id}`, { method: 'POST' });
+                    const result = await response.json();
+                    if(result.success) {
+                        showToast(result.message, 'success');
+                        document.getElementById(`user-row-${id}`).remove();
+                    } else {
+                        showToast(result.message, 'error');
+                    }
+                } catch(e) {
+                    showToast("网络请求错误", 'error');
+                }
+            }
+        }
+
+        // Password Modal Logic
+        function openPasswordModal(id, username) {
+            document.getElementById('pwdUserId').value = id;
+            document.getElementById('pwdTargetUser').innerText = `(${username})`;
+            document.getElementById('passwordModal').classList.add('active');
+        }
+
+        function closePasswordModal() {
+            document.getElementById('passwordModal').classList.remove('active');
+            document.getElementById('passwordForm').reset();
+        }
+
+        // Change Password Form Submit
+        document.getElementById('passwordForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            try {
+                const response = await fetch('/admin/password', { method: 'POST', body: formData });
+                const result = await response.json();
+                if(result.success) {
+                    showToast(result.message, 'success');
+                    closePasswordModal();
+                } else {
+                    showToast(result.message, 'error');
+                }
+            } catch(e) {
+                showToast("网络请求错误", 'error');
+            }
+        });
+
+        // Update Settings
+        document.getElementById('settingsForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            try {
+                const response = await fetch('/admin/settings', { method: 'POST', body: formData });
+                const result = await response.json();
+                if(result.success) {
+                    showToast(result.message, 'success');
+                } else {
+                    showToast(result.message, 'error');
+                }
+            } catch(e) {
+                showToast("网络请求错误", 'error');
+            }
+        });
+
+        let latestUpdateStatus = null;
+
+        function escapeHtml(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function renderUpdateStatus(data) {
+            latestUpdateStatus = data;
+
+            const statusText = document.getElementById('updateStatusText');
+            const meta = document.getElementById('updateMeta');
+            const output = document.getElementById('updateOutput');
+            const applyBtn = document.getElementById('applyUpdateBtn');
+
+            statusText.textContent = data.message || '未获取到更新状态';
+            statusText.style.color = data.supported
+                ? (data.has_updates && !data.dirty ? 'var(--accent-2)' : 'var(--text-muted)')
+                : 'var(--warning)';
+
+            const cards = [];
+            if (data.repo_root) cards.push({ label: '仓库目录', value: data.repo_root });
+            if (data.branch) cards.push({ label: '当前分支', value: data.branch });
+            if (data.current_commit) cards.push({ label: '本地版本', value: data.current_commit });
+            if (data.remote_commit) cards.push({ label: '远端版本', value: data.remote_commit });
+            if (data.upstream) cards.push({ label: '上游分支', value: data.upstream });
+            cards.push({ label: '本地改动', value: data.dirty ? '有未提交修改' : '干净' });
+            cards.push({ label: '待更新提交', value: data.has_updates ? String(data.behind || 0) : '0' });
+
+            meta.innerHTML = cards.map(card => `
+                <div style="padding: 0.85rem 1rem; border-radius: 12px; background: rgba(255,255,255,0.035); border: 1px solid var(--card-border);">
+                    <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.35rem;">${escapeHtml(card.label)}</div>
+                    <div style="color: var(--text-main); word-break: break-all;">${escapeHtml(card.value)}</div>
+                </div>
+            `).join('');
+
+            applyBtn.disabled = !(data.supported && data.has_updates && !data.dirty);
+
+            if (data.output || data.last_error) {
+                output.style.display = 'block';
+                output.textContent = data.output || data.last_error;
+            } else {
+                output.style.display = 'none';
+                output.textContent = '';
+            }
+        }
+
+        async function checkForUpdates() {
+            const checkBtn = document.getElementById('checkUpdateBtn');
+            checkBtn.disabled = true;
+            checkBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 检查中';
+            try {
+                const response = await fetch('/admin/update/status');
+                const result = await response.json();
+                renderUpdateStatus(result);
+            } catch (e) {
+                showToast('检查更新失败', 'error');
+            } finally {
+                checkBtn.disabled = false;
+                checkBtn.innerHTML = '<i class="fa-solid fa-rotate"></i> 检查更新';
+            }
+        }
+
+        async function applyUpdate() {
+            if (!latestUpdateStatus) {
+                await checkForUpdates();
+            }
+
+            if (!latestUpdateStatus || !latestUpdateStatus.supported) {
+                showToast('当前环境不支持增量升级', 'error');
+                return;
+            }
+            if (latestUpdateStatus.dirty) {
+                showToast('检测到本地未提交改动，已阻止升级', 'error');
+                return;
+            }
+            if (!latestUpdateStatus.has_updates) {
+                showToast('当前已经是最新版本', 'success');
+                return;
+            }
+            if (!confirm('确认执行增量升级吗？升级完成后通常需要重启应用。')) {
+                return;
+            }
+
+            const applyBtn = document.getElementById('applyUpdateBtn');
+            applyBtn.disabled = true;
+            applyBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 升级中';
+
+            try {
+                const response = await fetch('/admin/update/apply', { method: 'POST' });
+                const result = await response.json();
+                renderUpdateStatus(result);
+                showToast(result.message || (result.success ? '升级完成' : '升级失败'), result.success ? 'success' : 'error');
+            } catch (e) {
+                showToast('执行升级失败', 'error');
+            } finally {
+                applyBtn.innerHTML = '<i class="fa-solid fa-cloud-arrow-down"></i> 执行升级';
+                if (latestUpdateStatus) {
+                    applyBtn.disabled = !(latestUpdateStatus.supported && latestUpdateStatus.has_updates && !latestUpdateStatus.dirty);
+                }
+            }
+        }
+
+        document.getElementById('checkUpdateBtn').addEventListener('click', checkForUpdates);
+        document.getElementById('applyUpdateBtn').addEventListener('click', applyUpdate);
+        checkForUpdates();
+        
+        // Table Sorting
+        function sortTable(n, tableId) {
+            var table, rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
+            table = document.getElementById(tableId);
+            switching = true;
+            dir = "asc";
+            while (switching) {
+                switching = false;
+                rows = table.rows;
+                for (i = 1; i < (rows.length - 1); i++) {
+                    shouldSwitch = false;
+                    x = rows[i].getElementsByTagName("TD")[n];
+                    y = rows[i + 1].getElementsByTagName("TD")[n];
+                    
+                    let xVal = x.innerText.toLowerCase();
+                    let yVal = y.innerText.toLowerCase();
+                    
+                    // Numeric sort for ID
+                    if (n === 0) {
+                        xVal = parseFloat(xVal) || 0;
+                        yVal = parseFloat(yVal) || 0;
+                    }
+
+                    if (dir == "asc") {
+                        if (xVal > yVal) {
+                            shouldSwitch = true;
+                            break;
+                        }
+                    } else if (dir == "desc") {
+                        if (xVal < yVal) {
+                            shouldSwitch = true;
+                            break;
+                        }
+                    }
+                }
+                if (shouldSwitch) {
+                    rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                    switching = true;
+                    switchcount++;
+                } else {
+                    if (switchcount == 0 && dir == "asc") {
+                        dir = "desc";
+                        switching = true;
+                    }
+                }
+            }
+        }
+        
+        document.getElementById('passwordModal').addEventListener('click', function(e) {
+            if(e.target === this) closePasswordModal();
+        });
+    </script>
+    </div><!-- .app-layout -->
+</body>
+</html>
