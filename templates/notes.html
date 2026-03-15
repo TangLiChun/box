@@ -1,269 +1,221 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>笔记管理 - NexFile</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-</head>
-<body>
-    <div class="app-layout">
-        <aside class="sidebar">
-            <div class="sidebar-logo">
-                <h1 class="gradient-text" style="font-size: 1.8rem; margin: 0;"><i class="fa-solid fa-layer-group"></i> NexFile</h1>
-            </div>
-            
-            <nav class="sidebar-nav">
-                <a href="{{ url_for('index') }}" class="side-link"><i class="fa-solid fa-folder-open"></i> <span>文件管理</span></a>
-                <a href="{{ url_for('notes') }}" class="side-link active"><i class="fa-solid fa-book"></i> <span>笔记管理</span></a>
-                <a href="{{ url_for('view_trash') }}" class="side-link"><i class="fa-solid fa-trash-can"></i> <span>回收站</span></a>
-                <a href="{{ url_for('game') }}" class="side-link"><i class="fa-solid fa-dharmachakra"></i> <span>幸运转盘</span></a>
-                <a href="{{ url_for('admin') }}" class="side-link"><i class="fa-solid fa-users-gear"></i> <span>后台管理</span></a>
-            </nav>
+{% extends "base.html" %}
 
-            <div class="sidebar-footer">
-                <div style="margin-bottom: 1rem; color: #94a3b8; font-size: 0.85rem;">
-                    <i class="fa-solid fa-circle-user"></i> <span>{{ current_user }}</span>
-                </div>
-                <a href="{{ url_for('logout') }}" class="side-link" style="color: var(--danger);"><i class="fa-solid fa-sign-out-alt"></i> <span>退出登录</span></a>
-            </div>
-        </aside>
+{% block title %}笔记管理 - NexFile{% endblock %}
 
-        <main class="main-content">
-            <div class="container">
-
-        <div class="glass-panel">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-                <h2 style="margin: 0;"><i class="fa-solid fa-book-open"></i> Markdown 笔记</h2>
-                <div style="display: flex; align-items: center; gap: 1rem;">
-                    <div class="search-container">
-                        <i class="fa-solid fa-search search-icon"></i>
-                        <input type="text" id="noteSearch" class="search-input" placeholder="搜索笔记...">
-                        <button id="clearSearch" class="clear-search-btn" style="display: none;"><i class="fa-solid fa-xmark"></i></button>
-                    </div>
-                    <a href="{{ url_for('create_note') }}" class="btn btn-primary" style="width: auto; white-space: nowrap;"><i class="fa-solid fa-plus"></i> 新建笔记</a>
-                </div>
+{% block content %}
+<div class="glass-panel">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <h2 style="margin: 0;"><i class="fa-solid fa-book-open"></i> Markdown 笔记</h2>
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <div class="search-container">
+                <i class="fa-solid fa-search search-icon"></i>
+                <input type="text" id="noteSearch" class="search-input" placeholder="搜索笔记...">
+                <button id="clearSearch" class="clear-search-btn" style="display: none;"><i class="fa-solid fa-xmark"></i></button>
             </div>
-            
-            <div class="table-responsive">
-                <table>
-                    <thead>
-                        <tr>
-                            <th onclick="sortTable(0)" style="cursor: pointer;" title="点击排序"><i class="fa-solid fa-sort"></i> 笔记标题</th>
-                            <th onclick="sortTable(1)" style="cursor: pointer;" title="点击排序"><i class="fa-solid fa-sort"></i> 最后修改</th>
-                            <th style="min-width: 200px;">操作</th>
-                        </tr>
-                    </thead>
-                    <tbody id="noteTableBody">
-                        {% for note in notes %}
-                        <tr id="row-{{ note.filename }}">
-                            <td class="note-title-cell">
-                                <i class="fa-brands fa-markdown" style="color: var(--accent-1); margin-right: 0.75rem;"></i>
-                                <a href="{{ url_for('view_note', filename=note.filename) }}" class="note-link">{{ note.title }}</a>
-                                {% if note.share_id %}
-                                    <button onclick='copyShareLink({{ note.share_id|tojson }}, "note")' class="share-badge" title="复制链接"><i class="fa-solid fa-link"></i> 已分享</button>
-                                {% endif %}
-                            </td>
-                            <td>{{ note.modified }}</td>
-                            <td class="actions">
-                                <a href="{{ url_for('view_note', filename=note.filename) }}" class="btn btn-sm btn-outline" title="查看"><i class="fa-solid fa-eye"></i></a>
-                                <a href="{{ url_for('edit_note', filename=note.filename) }}" class="btn btn-sm btn-outline" style="color: var(--accent-2);" title="编辑"><i class="fa-solid fa-pen"></i></a>
-                                <button data-filename="{{ note.filename }}" onclick='shareItem("note", {{ note.filename|tojson }}, this)' class="btn btn-sm btn-outline" title="分享"><i class="fa-solid fa-share-nodes"></i></button>
-                                <button data-filename="{{ note.filename }}" onclick="deleteNote(this)" class="btn btn-sm btn-danger" title="删除"><i class="fa-solid fa-trash"></i></button>
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr id="emptyRow">
-                            <td colspan="3" style="text-align: center; color: #94a3b8; padding: 2rem;">暂无笔记，点击上方“新建笔记”开始创作。</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+            <a href="{{ url_for('create_note') }}" class="btn btn-primary" style="width: auto; white-space: nowrap;"><i class="fa-solid fa-plus"></i> 新建笔记</a>
         </div>
     </div>
+    
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th onclick="sortTable(0)" style="cursor: pointer;" title="点击排序"><i class="fa-solid fa-sort"></i> 笔记标题</th>
+                    <th onclick="sortTable(1)" style="cursor: pointer;" title="点击排序"><i class="fa-solid fa-sort"></i> 最后修改</th>
+                    <th style="min-width: 200px;">操作</th>
+                </tr>
+            </thead>
+            <tbody id="noteTableBody">
+                {% for note in notes %}
+                <tr id="row-{{ note.filename }}">
+                    <td class="note-title-cell">
+                        <i class="fa-brands fa-markdown" style="color: var(--accent-1); margin-right: 0.75rem;"></i>
+                        <a href="{{ url_for('view_note', filename=note.filename) }}" class="note-link">{{ note.title }}</a>
+                        {% if note.share_id %}
+                            <button onclick='copyShareLink({{ note.share_id|tojson }}, "note")' class="share-badge" title="复制链接"><i class="fa-solid fa-link"></i> 已分享</button>
+                        {% endif %}
+                    </td>
+                    <td>{{ note.modified }}</td>
+                    <td class="actions">
+                        <a href="{{ url_for('view_note', filename=note.filename) }}" class="btn btn-sm btn-outline" title="查看"><i class="fa-solid fa-eye"></i></a>
+                        <a href="{{ url_for('edit_note', filename=note.filename) }}" class="btn btn-sm btn-outline" style="color: var(--accent-2);" title="编辑"><i class="fa-solid fa-pen"></i></a>
+                        <button data-filename="{{ note.filename }}" onclick='shareItem("note", {{ note.filename|tojson }}, this)' class="btn btn-sm btn-outline" title="分享"><i class="fa-solid fa-share-nodes"></i></button>
+                        <button data-filename="{{ note.filename }}" onclick="deleteNote(this)" class="btn btn-sm btn-danger" title="删除"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                </tr>
+                {% else %}
+                <tr id="emptyRow">
+                    <td colspan="3" style="text-align: center; color: #94a3b8; padding: 2rem;">暂无笔记，点击上方“新建笔记”开始创作。</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
 
-    <!-- Toast Container -->
-    <div id="toast-container" class="toast-container"></div>
+{% block scripts %}
+<script>
+    // Search Logic
+    const noteSearch = document.getElementById('noteSearch');
+    const noteTableBody = document.getElementById('noteTableBody');
+    const clearSearch = document.getElementById('clearSearch');
 
-    <script>
-        function showToast(message, type = 'success') {
-            const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
-            toast.className = `toast toast-${type}`;
-            const icon = type === 'success' ? '<i class="fa-solid fa-circle-check"></i>' : '<i class="fa-solid fa-circle-exclamation"></i>';
-            toast.innerHTML = `${icon} <span>${message}</span>`;
-            container.appendChild(toast);
-            setTimeout(() => toast.classList.add('show'), 10);
-            setTimeout(() => {
-                toast.classList.remove('show');
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
+    if (noteSearch && noteTableBody) {
+        noteSearch.addEventListener('input', function(e) {
+            const term = e.target.value.toLowerCase();
+            const rows = Array.from(noteTableBody.querySelectorAll('tr:not(#emptyRow)'));
+            let visibleCount = 0;
+            
+            if (clearSearch) clearSearch.style.display = term ? 'block' : 'none';
+
+            rows.forEach(row => {
+                const titleText = row.querySelector('.note-link').innerText.toLowerCase();
+                if (titleText.includes(term)) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+            
+            let emptyRow = document.getElementById('emptyRow');
+            if (visibleCount === 0 && rows.length > 0) {
+                if (!emptyRow) {
+                    emptyRow = document.createElement('tr');
+                    emptyRow.id = 'emptyRow';
+                    emptyRow.innerHTML = `<td colspan="3" style="text-align: center; color: #94a3b8; padding: 2rem;">没有找到匹配的笔记。</td>`;
+                    noteTableBody.appendChild(emptyRow);
+                } else {
+                    emptyRow.style.display = '';
+                    emptyRow.innerHTML = `<td colspan="3" style="text-align: center; color: #94a3b8; padding: 2rem;">没有找到匹配的笔记。</td>`;
+                }
+            } else if (emptyRow) {
+                emptyRow.style.display = visibleCount === 0 && rows.length === 0 ? '' : 'none';
+                if (rows.length === 0) {
+                    emptyRow.innerHTML = '<td colspan="3" style="text-align: center; color: #94a3b8; padding: 2rem;">暂无笔记，点击上方“新建笔记”开始创作。</td>';
+                }
+            }
+        });
+
+        if (clearSearch) {
+            clearSearch.addEventListener('click', () => {
+                noteSearch.value = '';
+                noteSearch.dispatchEvent(new Event('input'));
+                noteSearch.focus();
+            });
         }
+    }
 
-        // Search Logic
-        const noteSearch = document.getElementById('noteSearch');
-        const noteTableBody = document.getElementById('noteTableBody');
-        const clearSearch = document.getElementById('clearSearch');
-
-        if (noteSearch && noteTableBody) {
-            noteSearch.addEventListener('input', function(e) {
-                const term = e.target.value.toLowerCase();
-                const rows = Array.from(noteTableBody.querySelectorAll('tr:not(#emptyRow)'));
-                let visibleCount = 0;
+    async function deleteNote(btn) {
+        const filename = btn.getAttribute('data-filename');
+        if(!confirm(`您确定要将笔记 ${filename} 移至回收站吗？`)) return;
+        
+        try {
+            const response = await fetch(`/notes/delete/${encodeURIComponent(filename)}`, {
+                method: 'POST'
+            });
+            const result = await response.json();
+            if(result.success) {
+                showToast("笔记删除成功", 'success');
+                const row = btn.closest('tr');
+                if(row) row.remove();
                 
-                if (clearSearch) clearSearch.style.display = term ? 'block' : 'none';
-
-                rows.forEach(row => {
-                    const titleText = row.querySelector('.note-link').innerText.toLowerCase();
-                    if (titleText.includes(term)) {
-                        row.style.display = '';
-                        visibleCount++;
-                    } else {
-                        row.style.display = 'none';
-                    }
-                });
-                
-                let emptyRow = document.getElementById('emptyRow');
-                if (visibleCount === 0 && rows.length > 0) {
+                const tbody = document.getElementById('noteTableBody');
+                if(tbody.querySelectorAll('tr:not(#emptyRow)').length === 0) {
+                    let emptyRow = document.getElementById('emptyRow');
                     if (!emptyRow) {
-                        emptyRow = document.createElement('tr');
-                        emptyRow.id = 'emptyRow';
-                        emptyRow.innerHTML = `<td colspan="3" style="text-align: center; color: #94a3b8; padding: 2rem;">没有找到匹配的笔记。</td>`;
-                        noteTableBody.appendChild(emptyRow);
-                    } else {
-                        emptyRow.style.display = '';
-                        emptyRow.innerHTML = `<td colspan="3" style="text-align: center; color: #94a3b8; padding: 2rem;">没有找到匹配的笔记。</td>`;
+                         emptyRow = document.createElement('tr');
+                         emptyRow.id = 'emptyRow';
+                         tbody.appendChild(emptyRow);
                     }
-                } else if (emptyRow) {
-                    emptyRow.style.display = visibleCount === 0 && rows.length === 0 ? '' : 'none';
-                    if (rows.length === 0) {
-                        emptyRow.innerHTML = '<td colspan="3" style="text-align: center; color: #94a3b8; padding: 2rem;">暂无笔记，点击上方“新建笔记”开始创作。</td>';
-                    }
+                    emptyRow.style.display = '';
+                    emptyRow.innerHTML = '<td colspan="3" style="text-align: center; color: #94a3b8; padding: 2rem;">暂无笔记，点击上方“新建笔记”开始创作。</td>';
                 }
-            });
-
-            if (clearSearch) {
-                clearSearch.addEventListener('click', () => {
-                    noteSearch.value = '';
-                    noteSearch.dispatchEvent(new Event('input'));
-                    noteSearch.focus();
-                });
+            } else {
+                showToast(result.message, 'error');
             }
+        } catch(e) {
+            showToast("删除笔记时出错", 'error');
         }
+    }
 
-        async function deleteNote(btn) {
-            const filename = btn.getAttribute('data-filename');
-            if(!confirm(`您确定要将笔记 ${filename} 移至回收站吗？`)) return;
+    // --- Table Sorting ---
+    let sortDirections = [true, true]; 
+    function sortTable(columnIndex) {
+        const table = document.querySelector("table");
+        const tbody = document.getElementById("noteTableBody");
+        const rows = Array.from(tbody.querySelectorAll("tr:not(#emptyRow)"));
+        
+        if (rows.length <= 1) return;
+
+        const isAscending = sortDirections[columnIndex];
+        
+        rows.sort((a, b) => {
+            let valA = a.cells[columnIndex].innerText.trim();
+            let valB = b.cells[columnIndex].innerText.trim();
             
-            try {
-                const response = await fetch(`/notes/delete/${encodeURIComponent(filename)}`, {
-                    method: 'POST'
-                });
-                const result = await response.json();
-                if(result.success) {
-                    showToast("笔记删除成功", 'success');
-                    const row = btn.closest('tr');
-                    if(row) row.remove();
-                    
-                    const tbody = document.getElementById('noteTableBody');
-                    if(tbody.querySelectorAll('tr:not(#emptyRow)').length === 0) {
-                        let emptyRow = document.getElementById('emptyRow');
-                        if (!emptyRow) {
-                             emptyRow = document.createElement('tr');
-                             emptyRow.id = 'emptyRow';
-                             tbody.appendChild(emptyRow);
-                        }
-                        emptyRow.style.display = '';
-                        emptyRow.innerHTML = '<td colspan="3" style="text-align: center; color: #94a3b8; padding: 2rem;">暂无笔记，点击上方“新建笔记”开始创作。</td>';
-                    }
+            return isAscending 
+                ? valA.localeCompare(valB, undefined, {numeric: true}) 
+                : valB.localeCompare(valA, undefined, {numeric: true});
+        });
+
+        sortDirections[columnIndex] = !isAscending;
+        rows.forEach(row => tbody.appendChild(row));
+        
+        const headers = table.querySelectorAll("th");
+        headers.forEach((th, i) => {
+            const icon = th.querySelector("i");
+            if (icon) {
+                if (i === columnIndex) {
+                    icon.className = isAscending ? "fa-solid fa-sort-up" : "fa-solid fa-sort-down";
+                    th.style.color = "var(--accent-1)";
                 } else {
-                    showToast(result.message, 'error');
+                    icon.className = "fa-solid fa-sort";
+                    th.style.color = "";
                 }
-            } catch(e) {
-                showToast("删除笔记时出错", 'error');
             }
-        }
-
-        // --- Table Sorting ---
-        let sortDirections = [true, true]; 
-        function sortTable(columnIndex) {
-            const table = document.querySelector("table");
-            const tbody = document.getElementById("noteTableBody");
-            const rows = Array.from(tbody.querySelectorAll("tr:not(#emptyRow)"));
-            
-            if (rows.length <= 1) return;
-
-            const isAscending = sortDirections[columnIndex];
-            
-            rows.sort((a, b) => {
-                let valA = a.cells[columnIndex].innerText.trim();
-                let valB = b.cells[columnIndex].innerText.trim();
+        });
+    }
+    
+    async function shareItem(type, filename, btn) {
+        try {
+            const response = await fetch('/share/create', { 
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({type: type, filename: filename})
+            });
+            const result = await response.json();
+            if(result.success) {
+                copyShareLink(result.share_id, type);
                 
-                return isAscending 
-                    ? valA.localeCompare(valB, undefined, {numeric: true}) 
-                    : valB.localeCompare(valA, undefined, {numeric: true});
-            });
-
-            sortDirections[columnIndex] = !isAscending;
-            rows.forEach(row => tbody.appendChild(row));
-            
-            const headers = table.querySelectorAll("th");
-            headers.forEach((th, i) => {
-                const icon = th.querySelector("i");
-                if (icon) {
-                    if (i === columnIndex) {
-                        icon.className = isAscending ? "fa-solid fa-sort-up" : "fa-solid fa-sort-down";
-                        th.style.color = "var(--accent-1)";
-                    } else {
-                        icon.className = "fa-solid fa-sort";
-                        th.style.color = "";
-                    }
+                // Update UI without reload
+                const row = btn.closest('tr');
+                const cell = row.querySelector('.note-title-cell');
+                if (!cell.querySelector('.share-badge')) {
+                    const badge = document.createElement('button');
+                    badge.onclick = () => copyShareLink(result.share_id, type);
+                    badge.className = 'share-badge';
+                    badge.title = '复制链接';
+                    badge.innerHTML = '<i class="fa-solid fa-link"></i> 已分享';
+                    cell.appendChild(badge);
                 }
-            });
-        }
-        
-        async function shareItem(type, filename, btn) {
-            try {
-                const response = await fetch('/share/create', { 
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({type: type, filename: filename})
-                });
-                const result = await response.json();
-                if(result.success) {
-                    copyShareLink(result.share_id, type);
-                    
-                    // Update UI without reload
-                    const row = btn.closest('tr');
-                    const cell = row.querySelector('.note-title-cell');
-                    if (!cell.querySelector('.share-badge')) {
-                        const badge = document.createElement('button');
-                        badge.onclick = () => copyShareLink(result.share_id, type);
-                        badge.className = 'share-badge';
-                        badge.title = '复制链接';
-                        badge.innerHTML = '<i class="fa-solid fa-link"></i> 已分享';
-                        cell.appendChild(badge);
-                    }
-                } else {
-                    showToast("分享创建失败: " + result.message, 'error');
-                }
-            } catch(e) {
-                 showToast("网络请求错误", 'error');
+            } else {
+                showToast("分享创建失败: " + result.message, 'error');
             }
+        } catch(e) {
+             showToast("网络请求错误", 'error');
         }
-        
-        function copyShareLink(share_id, type) {
-            const prefix = type === 'file' ? '/s/f/' : '/s/n/';
-            const url = window.location.origin + prefix + share_id;
-            navigator.clipboard.writeText(url).then(() => {
-                showToast("链接已复制，任何人可通过此链接访问。", 'success');
-            }).catch(err => {
-                showToast("复制失败，您的分享链接是: " + url, 'error');
-            });
-        }
-    </script>
-    </div><!-- .app-layout -->
-</body>
-</html>
+    }
+    
+    function copyShareLink(share_id, type) {
+        const prefix = type === 'file' ? '/s/f/' : '/s/n/';
+        const url = window.location.origin + prefix + share_id;
+        navigator.clipboard.writeText(url).then(() => {
+            showToast("链接已复制", 'success');
+        }).catch(err => {
+            showToast("复制失败: " + url, 'error');
+        });
+    }
+</script>
+{% endblock %}

@@ -726,11 +726,13 @@ def index():
 
     files.sort(key=lambda x: x['size_raw'], reverse=True)
     onlyoffice_url = get_setting('onlyoffice_url')
+    announcement = get_setting('announcement')
     return render_template('index.html', 
                           files=files, 
                           current_user=session['username'], 
                           onlyoffice_url=onlyoffice_url,
-                          office_extensions=tuple(ONLYOFFICE_FORMATS.keys()))
+                          office_extensions=tuple(ONLYOFFICE_FORMATS.keys()),
+                          announcement=announcement)
 
 @app.route('/download/<filename>')
 def download_file(filename):
@@ -782,7 +784,7 @@ def analyze_file(filename):
     try:
         with open(filepath, 'rb') as f:
             header = f.read(16)
-            hex_header = ' '.join(f'{b:02x}' for b in header)
+            hex_header = ' '.join(f'{header_byte:02x}' for header_byte in header)
     except Exception:
         hex_header = '无法读取文件十六进制数据'
         
@@ -802,12 +804,14 @@ def analyze_file(filename):
 def game():
     if not is_authenticated():
         return redirect(url_for('login'))
-    return render_template('game.html', current_user=session['username'], is_public=False)
+    announcement = get_setting('announcement')
+    return render_template('game.html', current_user=session['username'], is_public=False, announcement=announcement)
 
 @app.route('/public/game')
 def public_game():
     data = request.args.get('data', '')
-    return render_template('game.html', is_public=True, shared_data=data)
+    announcement = get_setting('announcement')
+    return render_template('game.html', is_public=True, shared_data=data, announcement=announcement)
 
 @app.route('/game/share', methods=['POST'])
 def create_game_share():
@@ -845,7 +849,8 @@ def public_share_game(share_id):
     if not share:
         return "此转盘分享链接已失效或不存在。", 404
 
-    return render_template('game.html', is_public=True, shared_data=share['target_filename'])
+    announcement = get_setting('announcement')
+    return render_template('game.html', is_public=True, shared_data=share['target_filename'], announcement=announcement)
 
 # ----------------- NOTES FEATURE -----------------
 
@@ -879,7 +884,8 @@ def notes():
         app.logger.error(f"Error listing notes: {e}")
             
     notes_list.sort(key=lambda x: x['mtime_raw'], reverse=True)
-    return render_template('notes.html', notes=notes_list, current_user=session['username'])
+    announcement = get_setting('announcement')
+    return render_template('notes.html', notes=notes_list, current_user=session['username'], announcement=announcement)
 
 @app.route('/notes/create', methods=['GET', 'POST'])
 def create_note():
@@ -905,7 +911,8 @@ def create_note():
         # Return success with JSON for fetch API
         return jsonify({'success': True, 'redirect': url_for('view_note', filename=filename)})
         
-    return render_template('note_edit.html', current_user=session['username'])
+    announcement = get_setting('announcement')
+    return render_template('note_edit.html', current_user=session['username'], announcement=announcement)
 
 @app.route('/notes/edit/<filename>', methods=['GET', 'POST'])
 def edit_note(filename):
@@ -959,7 +966,8 @@ def edit_note(filename):
     with open(filepath, 'r', encoding='utf-8') as f:
         content = f.read()
         
-    return render_template('note_edit.html', title=safe_name[:-3], content=content, is_edit=True, original_filename=safe_name, current_user=session['username'])
+    announcement = get_setting('announcement')
+    return render_template('note_edit.html', title=safe_name[:-3], content=content, is_edit=True, original_filename=safe_name, current_user=session['username'], announcement=announcement)
 
 @app.route('/notes/view/<filename>')
 def view_note(filename):
@@ -976,7 +984,8 @@ def view_note(filename):
     # Basic XSS protection: escape HTML tags before markdown rendering
     escaped_content = html.escape(content)
     html_content = markdown.markdown(escaped_content, extensions=['fenced_code', 'tables'])
-    return render_template('note_view.html', title=safe_name[:-3], content=html_content, filename=safe_name, current_user=session['username'])
+    announcement = get_setting('announcement')
+    return render_template('note_view.html', title=safe_name[:-3], content=html_content, filename=safe_name, current_user=session['username'], announcement=announcement)
 
 @app.route('/notes/delete/<filename>', methods=['POST'])
 def delete_note(filename):
@@ -998,14 +1007,14 @@ def admin():
     onlyoffice_url = get_setting('onlyoffice_url', '')
     onlyoffice_jwt_secret = get_onlyoffice_jwt_secret()
     onlyoffice_callback_base = get_setting('onlyoffice_callback_base', '')
-    return render_template(
-        'admin.html',
-        users=users,
-        current_user=session['username'],
-        onlyoffice_url=onlyoffice_url,
-        onlyoffice_jwt_secret=onlyoffice_jwt_secret,
-        onlyoffice_callback_base=onlyoffice_callback_base
-    )
+    announcement = get_setting('announcement')
+    return render_template('admin.html', 
+                          users=users, 
+                          current_user=session['username'],
+                          onlyoffice_url=get_setting('onlyoffice_url'),
+                          onlyoffice_jwt_secret=get_setting('onlyoffice_jwt_secret'),
+                          onlyoffice_callback_base=get_setting('onlyoffice_callback_base'),
+                          announcement=announcement)
 
 @app.route('/admin/settings', methods=['POST'])
 @admin_required
@@ -1191,7 +1200,8 @@ def public_share_note(share_id):
     escaped_content = html.escape(content)
     html_content = markdown.markdown(escaped_content, extensions=['fenced_code', 'tables'])
     # Serve a clean public viewing template
-    return render_template('share_view.html', title=filename[:-3], content=html_content)
+    announcement = get_setting('announcement')
+    return render_template('share_view.html', title=filename[:-3], content=html_content, announcement=announcement)
 
 # ----------------- TRASH SYSTEM -----------------
 def auto_cleanup_trash():
@@ -1292,7 +1302,8 @@ def view_trash():
         app.logger.error(f"Error listing trash: {e}")
         
     trash_items.sort(key=lambda x: x['mtime_raw'], reverse=True)
-    return render_template('trash.html', items=trash_items, current_user=session['username'])
+    announcement = get_setting('announcement')
+    return render_template('trash.html', items=trash_items, current_user=session['username'], announcement=announcement)
 
 @app.route('/trash/restore/<filename>', methods=['POST'])
 def restore_item(filename):

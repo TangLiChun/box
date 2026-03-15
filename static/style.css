@@ -954,3 +954,99 @@ tbody tr:hover {
     font-size: 0.9rem;
     overflow-x: auto;
 }
+
+/* --- Light Mode Variables --- */
+[data-theme='light'] {
+    --bg-color: #f1f5f9;
+    --text-color: #334155;
+    --text-main: #0f172a;
+    --text-muted: #64748b;
+    --card-bg: rgba(255, 255, 255, 0.72);
+    --card-bg-strong: rgba(255, 255, 255, 0.9);
+    --card-bg-soft: rgba(58, 169, 255, 0.08);
+    --card-border: rgba(0, 0, 0, 0.08);
+    --card-border-strong: rgba(0, 0, 0, 0.12);
+    --shadow-md: 0 12px 30px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme='light'] body {
+    background: 
+        radial-gradient(circle at 10% 20%, rgba(58, 169, 255, 0.12), transparent 0 35%),
+        radial-gradient(circle at 90% 80%, rgba(58, 169, 255, 0.08), transparent 0 40%),
+        #f8fafc;
+}
+
+[data-theme='light'] .glass-panel {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.8));
+    border-color: rgba(0, 0, 0, 0.05);
+}
+
+[data-theme='light'] .sidebar {
+    background: rgba(255, 255, 255, 0.8);
+    border-right-color: rgba(0, 0, 0, 0.05);
+}
+
+[data-theme='light'] .side-link:hover {
+    background: rgba(0, 0, 0, 0.03);
+}
+
+[data-theme='light'] .search-input {
+    background: rgba(255, 255, 255, 0.8);
+    color: var(--text-main);
+}
+
+/* --- Announcement Banner --- */
+.announcement-banner {
+    background: linear-gradient(90deg, #3aa9ff, #7dd3fc);
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--radius-md);
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: 0 10px 25px rgba(58, 169, 255, 0.2);
+    animation: slideDown 0.5s ease-out;
+}
+
+.announcement-banner i {
+    font-size: 1.2rem;
+}
+
+.announcement-content {
+    flex-grow: 1;
+    font-weight: 500;
+}
+
+/* --- Theme Toggle --- */
+.theme-toggle-btn {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.85rem 1.25rem;
+    border-radius: var(--radius-md);
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: var(--transition-base);
+    background: transparent;
+    border: none;
+    width: 100%;
+    cursor: pointer;
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.theme-toggle-btn:hover {
+    background: rgba(255, 255, 255, 0.055);
+    color: var(--text-main);
+}
+
+[data-theme='light'] .theme-toggle-btn:hover {
+    background: rgba(0, 0, 0, 0.03);
+}
+
+.theme-toggle-btn i {
+    width: 20px;
+    text-align: center;
+}

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}NexFile{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <meta name="theme-color" content="#08111d">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='icon-512.png') }}">
+    <script>
+        // Theme initialization - avoid flash
+        const savedTheme = localStorage.getItem('nexfile-theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    </script>
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <div class="app-layout">
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <h1 class="gradient-text" style="font-size: 1.8rem; margin: 0;"><i class="fa-solid fa-layer-group"></i> NexFile</h1>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a href="{{ url_for('index') }}" class="side-link {% if request.endpoint == 'index' %}active{% endif %}"><i class="fa-solid fa-folder-open"></i> <span>文件管理</span></a>
+                <a href="{{ url_for('notes') }}" class="side-link {% if request.endpoint in ['notes', 'view_note', 'edit_note', 'create_note'] %}active{% endif %}"><i class="fa-solid fa-book"></i> <span>笔记管理</span></a>
+                <a href="{{ url_for('view_trash') }}" class="side-link {% if request.endpoint == 'view_trash' %}active{% endif %}"><i class="fa-solid fa-trash-can"></i> <span>回收站</span></a>
+                <a href="{{ url_for('game') }}" class="side-link {% if request.endpoint == 'game' %}active{% endif %}"><i class="fa-solid fa-dharmachakra"></i> <span>幸运转盘</span></a>
+                <a href="{{ url_for('admin') }}" class="side-link {% if request.endpoint in ['admin', 'admin_view_user_shares'] %}active{% endif %}"><i class="fa-solid fa-users-gear"></i> <span>后台管理</span></a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button id="themeToggle" class="theme-toggle-btn">
+                    <i class="fa-solid fa-moon"></i> <span>深色模式</span>
+                </button>
+                <div style="margin-bottom: 1rem; color: #94a3b8; font-size: 0.85rem; padding-left: 1.25rem;">
+                    <i class="fa-solid fa-circle-user"></i> <span>{{ current_user }}</span>
+                </div>
+                <a href="{{ url_for('logout') }}" class="side-link" style="color: var(--danger);"><i class="fa-solid fa-sign-out-alt"></i> <span>退出登录</span></a>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="container">
+                {% if announcement %}
+                <div class="announcement-banner">
+                    <i class="fa-solid fa-bullhorn"></i>
+                    <div class="announcement-content">{{ announcement }}</div>
+                </div>
+                {% endif %}
+                
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <script>
+        // Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register("{{ url_for('static', filename='sw.js') }}")
+                    .then(reg => console.log('SW Registered'))
+                    .catch(err => console.log('SW Registration Failed', err));
+            });
+        }
+
+        // Theme Toggle Logic
+        const themeToggle = document.getElementById('themeToggle');
+        const updateThemeUI = (theme) => {
+            const isDark = theme === 'dark';
+            const icon = themeToggle.querySelector('i');
+            const span = themeToggle.querySelector('span');
+            if (icon) icon.className = isDark ? 'fa-solid fa-moon' : 'fa-solid fa-sun';
+            if (span) span.innerText = isDark ? '深色模式' : '浅色模式';
+            document.documentElement.setAttribute('data-theme', theme);
+            const metaTheme = document.querySelector('meta[name="theme-color"]');
+            if (metaTheme) metaTheme.setAttribute('content', isDark ? '#08111d' : '#f8fafc');
+        };
+
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            localStorage.setItem('nexfile-theme', newTheme);
+            updateThemeUI(newTheme);
+        });
+        
+        // Initial UI check
+        updateThemeUI(localStorage.getItem('nexfile-theme') || 'dark');
+
+        // Global Toast helper
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            const icon = type === 'success' ? '<i class="fa-solid fa-circle-check"></i>' : '<i class="fa-solid fa-circle-exclamation"></i>';
+            toast.innerHTML = `${icon} <span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.add('show'), 10);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

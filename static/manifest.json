@@ -1,0 +1,16 @@
+{
+  "name": "NexFile - 文件分析管理系统",
+  "short_name": "NexFile",
+  "description": "Sleek and modern file analysis and management system.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#08111d",
+  "theme_color": "#08111d",
+  "icons": [
+    {
+      "src": "/static/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

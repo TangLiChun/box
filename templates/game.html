@@ -1,645 +1,162 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>幸运转盘 - NexFile</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    <style>
-        :root {
-            --gw-bg: #f8fafc;
-            --gw-surface: #ffffff;
-            --gw-border: #dbe2ea;
-            --gw-text: #1f2937;
-            --gw-muted: #64748b;
-            --gw-muted-2: #475569;
-            --gw-primary: #334155;
-            --gw-primary-dark: #1f2937;
-        }
+{% extends "base.html" %}
 
-        .game-container {
-            display: flex;
-            gap: 2rem;
-            align-items: flex-start;
-            margin-top: 1rem;
-        }
+{% block title %}幸运转盘 - NexFile{% endblock %}
 
-        .game-hero h2,
-        .controls-panel h3 {
-            color: var(--gw-text);
-        }
+{% block extra_head %}
+<style>
+    .wheel-container {
+        position: relative;
+        width: 400px;
+        height: 400px;
+        margin: 2rem auto;
+    }
+    #wheel {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        border: 8px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 0 50px rgba(58, 169, 255, 0.3);
+        transition: transform 4s cubic-bezier(0.15, 0, 0.15, 1);
+        background: conic-gradient(
+            #3aa9ff 0deg 45deg,
+            #1e293b 45deg 90deg,
+            #3aa9ff 90deg 135deg,
+            #0f172a 135deg 180deg,
+            #7dd3fc 180deg 225deg,
+            #1e293b 225deg 270deg,
+            #3aa9ff 270deg 315deg,
+            #0f172a 315deg 360deg
+        );
+    }
+    .pointer {
+        position: absolute;
+        top: -20px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 0;
+        height: 0;
+        border-left: 20px solid transparent;
+        border-right: 20px solid transparent;
+        border-top: 40px solid var(--accent-1);
+        z-index: 10;
+        filter: drop-shadow(0 4px 10px rgba(0,0,0,0.5));
+    }
+    .spin-btn {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 80px;
+        height: 80px;
+        background: var(--accent-1);
+        border: 4px solid white;
+        border-radius: 50%;
+        color: white;
+        font-weight: bold;
+        cursor: pointer;
+        z-index: 11;
+        box-shadow: 0 0 20px rgba(255,255,255,0.4);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.2s;
+    }
+    .spin-btn:hover {
+        transform: translate(-50%, -50%) scale(1.1);
+    }
+    .spin-btn:active {
+        transform: translate(-50%, -50%) scale(0.95);
+    }
+    #resultMessage {
+        text-align: center;
+        margin-top: 2rem;
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--accent-1);
+        min-height: 2.2rem;
+    }
+</style>
+{% endblock %}
 
-        .game-hero {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 1rem;
-        }
-
-        .helper-line {
-            color: var(--gw-muted);
-            margin-bottom: 1rem;
-            line-height: 1.7;
-        }
-
-        .feature-chips {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-            margin-top: 0.9rem;
-        }
-
-        .chip {
-            border: 1px solid var(--gw-border);
-            background: #f1f5f9;
-            color: var(--gw-muted-2);
-            padding: 0.28rem 0.6rem;
-            border-radius: 999px;
-            font-size: 0.78rem;
-        }
-
-        .wheel-panel,
-        .controls-panel {
-            border: 1px solid var(--gw-border);
-            background: linear-gradient(180deg, var(--gw-surface) 0%, var(--gw-bg) 100%);
-            box-shadow: 0 12px 28px rgba(15, 23, 42, 0.10);
-            backdrop-filter: blur(8px);
-        }
-
-        .wheel-panel {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 500px;
-            position: relative;
-        }
-
-        .controls-panel {
-            width: 350px;
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-
-        .wheel-wrapper {
-            position: relative;
-            width: 400px;
-            height: 400px;
-            border-radius: 50%;
-            border: 6px solid #cbd5e1;
-            box-shadow: 0 0 0 10px #e2e8f0, 0 16px 30px rgba(15, 23, 42, 0.12);
-            overflow: hidden;
-            background: var(--gw-bg);
-            transition: transform 5s cubic-bezier(0.25, 0.1, 0.15, 1);
-        }
-
-        .wheel-pointer {
-            position: absolute;
-            top: -15px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 0;
-            height: 0;
-            border-left: 15px solid transparent;
-            border-right: 15px solid transparent;
-            border-top: 35px solid #334155;
-            z-index: 10;
-            filter: drop-shadow(0 4px 6px rgba(15, 23, 42, 0.25));
-        }
-
-        .wheel-hub {
-            position: absolute;
-            width: 72px;
-            height: 72px;
-            border-radius: 999px;
-            background: radial-gradient(circle at 30% 30%, #ffffff, #cbd5e1);
-            border: 6px solid #64748b;
-            box-shadow: 0 8px 18px rgba(15, 23, 42, 0.2);
-            z-index: 11;
-            pointer-events: none;
-        }
-
-        canvas {
-            width: 100%;
-            height: 100%;
-            display: block;
-        }
-
-        .btn.btn-primary {
-            background: linear-gradient(180deg, var(--gw-primary) 0%, var(--gw-primary-dark) 100%);
-            border-color: var(--gw-primary);
-            color: #f8fafc;
-        }
-
-        .btn.btn-primary:hover {
-            filter: brightness(1.05);
-        }
-
-        .btn.btn-outline {
-            border-color: #cbd5e1;
-            color: var(--gw-primary);
-            background: #ffffff;
-        }
-
-        .btn.btn-outline:hover {
-            background: #f1f5f9;
-            border-color: #94a3b8;
-        }
-
-        .spin-btn {
-            margin-top: 1.6rem;
-            font-size: 1.1rem;
-            padding: 0.95rem 2.8rem;
-            border-radius: 999px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            font-weight: 700;
-            min-width: 240px;
-            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.16);
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(100, 116, 139, 0.30); }
-            70% { box-shadow: 0 0 0 14px rgba(100, 116, 139, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(100, 116, 139, 0); }
-        }
-
-        .items-textarea {
-            width: 100%;
-            height: 250px;
-            background: var(--gw-bg);
-            border: 1px solid var(--gw-border);
-            border-radius: 10px;
-            color: var(--gw-text);
-            padding: 1rem;
-            font-size: 1rem;
-            resize: vertical;
-            outline: none;
-            line-height: 1.6;
-            margin-bottom: 1rem;
-        }
-
-        .items-textarea:focus {
-            border-color: #94a3b8;
-            box-shadow: 0 0 0 3px rgba(148, 163, 184, 0.2);
-        }
-
-        .action-row {
-            display: flex;
-            gap: 0.75rem;
-            justify-content: space-between;
-        }
-
-        .preset-title {
-            color: var(--gw-muted);
-            margin-bottom: 0.5rem;
-            font-size: 0.9rem;
-        }
-
-        .preset-wrap {
-            display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-        }
-
-        .public-title {
-            margin: 0;
-            color: var(--gw-text);
-            font-size: 2rem;
-            font-weight: 800;
-            letter-spacing: 0.02em;
-        }
-
-        .public-subtitle {
-            color: var(--gw-muted);
-            margin-top: 0.5rem;
-        }
-
-        .result-content {
-            text-align: center;
-            font-size: 2.5rem;
-            font-weight: bold;
-            color: var(--gw-text);
-            padding: 2rem 0;
-            text-shadow: 0 2px 8px rgba(148, 163, 184, 0.35);
-            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-
-        @keyframes popIn {
-            0% { transform: scale(0.5); opacity: 0; }
-            100% { transform: scale(1); opacity: 1; }
-        }
-
-        @media (max-width: 900px) {
-            .game-container {
-                flex-direction: column;
-                align-items: center;
-            }
-            .controls-panel {
-                width: 100%;
-            }
-            .wheel-wrapper {
-                width: min(88vw, 400px);
-                height: min(88vw, 400px);
-            }
-            .spin-btn {
-                min-width: 200px;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="app-layout">
+{% block content %}
+<div class="glass-panel">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <h2 style="margin: 0;"><i class="fa-solid fa-dharmachakra"></i> 幸运转盘</h2>
         {% if not is_public %}
-        <aside class="sidebar">
-            <div class="sidebar-logo">
-                <h1 class="gradient-text" style="font-size: 1.8rem; margin: 0;"><i class="fa-solid fa-layer-group"></i> NexFile</h1>
-            </div>
-            
-            <nav class="sidebar-nav">
-                <a href="{{ url_for('index') }}" class="side-link"><i class="fa-solid fa-folder-open"></i> <span>文件管理</span></a>
-                <a href="{{ url_for('notes') }}" class="side-link"><i class="fa-solid fa-book"></i> <span>笔记管理</span></a>
-                <a href="{{ url_for('view_trash') }}" class="side-link"><i class="fa-solid fa-trash-can"></i> <span>回收站</span></a>
-                <a href="{{ url_for('game') }}" class="side-link active"><i class="fa-solid fa-dharmachakra"></i> <span>幸运转盘</span></a>
-                <a href="{{ url_for('admin') }}" class="side-link"><i class="fa-solid fa-users-gear"></i> <span>后台管理</span></a>
-            </nav>
-
-            <div class="sidebar-footer">
-                <div style="margin-bottom: 1rem; color: #94a3b8; font-size: 0.85rem;">
-                    <i class="fa-solid fa-circle-user"></i> <span>{{ current_user }}</span>
-                </div>
-                <a href="{{ url_for('logout') }}" class="side-link" style="color: var(--danger);"><i class="fa-solid fa-sign-out-alt"></i> <span>退出登录</span></a>
-            </div>
-        </aside>
+        <button id="shareGameBtn" class="btn btn-primary" style="width: auto;"><i class="fa-solid fa-share-nodes"></i> 分享转盘</button>
         {% endif %}
-
-        <main class="main-content">
-            <div class="container">
-        {% if not is_public %}
-        <div class="glass-panel" style="margin-bottom: 2rem;">
-            <div class="game-hero">
-                <h2><i class="fa-solid fa-star"></i> 幸运大转盘</h2>
-            </div>
-            <p class="helper-line">无法下定决心？让命运帮你选择！在右侧输入选项（每行一个），点击旋转按钮即可。</p>
-            <div class="feature-chips">
-                <span class="chip"><i class="fa-solid fa-wand-magic-sparkles"></i> 极简灰白</span>
-                <span class="chip"><i class="fa-solid fa-link"></i> 短链接分享</span>
-                <span class="chip"><i class="fa-solid fa-mobile-screen-button"></i> 移动端适配</span>
-            </div>
-        {% else %}
-        <!-- Compact Public Header -->
-        <header style="margin-bottom: 2rem; text-align: center;">
-            <h1 class="public-title"><i class="fa-solid fa-star"></i> 他人的幸运转盘</h1>
-            <p class="public-subtitle">有人向你分享了一个大转盘，点击旋转试试手气吧！</p>
-        </header>
-        <div class="glass-panel" style="margin-bottom: 2rem;">
-        {% endif %}
-            
-        <div class="game-container" {% if is_public %}style="justify-content: center; margin-top: 2rem;"{% endif %}>
-            <div class="wheel-panel glass-panel" {% if is_public %}style="max-width: 600px; flex: initial;"{% endif %}>
-                <div class="wheel-pointer"></div>
-                <div class="wheel-wrapper" id="wheelWrapper">
-                    <canvas id="wheelCanvas" width="400" height="400"></canvas>
-                </div>
-                <div class="wheel-hub" aria-hidden="true"></div>
-                <button class="btn btn-primary spin-btn" id="spinBtn"><i class="fa-solid fa-bolt"></i> 立刻旋转</button>
-            </div>
-            
-            {% if not is_public %}
-            <div class="controls-panel glass-panel">
-                <h3><i class="fa-solid fa-list-ul"></i> 转盘选项</h3>
-                <textarea class="items-textarea" id="itemsInput" placeholder="请输入选项，一行一个...">
-今晚吃火锅
-今晚吃日料
-今晚吃烧烤
-今晚吃沙拉
-回家自己做
-点个外卖吧
-随便吃点面
-饿一顿减肥
-</textarea>
-                <div class="action-row">
-                    <button class="btn btn-outline" id="updateBtn" style="flex: 1;"><i class="fa-solid fa-arrows-rotate"></i> 更新选项</button>
-                    <button class="btn btn-primary" id="shareBtn" style="flex: 1;"><i class="fa-solid fa-share-nodes"></i> 分享转盘</button>
-                </div>
-                
-                <div style="margin-top: 2rem;">
-                    <h4 class="preset-title">预设选项</h4>
-                    <div class="preset-wrap">
-                        <button class="btn btn-sm btn-outline preset-btn" data-preset="eat">吃饭选择</button>
-                        <button class="btn btn-sm btn-outline preset-btn" data-preset="activity">周末去哪</button>
-                        <button class="btn btn-sm btn-outline preset-btn" data-preset="drink">喝点什么</button>
-                    </div>
-                </div>
-            </div>
-            {% endif %}
-        </div>
     </div>
 
-    <!-- Result Modal -->
-    <div class="modal-overlay" id="resultModal">
-        <div class="modal glass-panel" style="max-width: 500px; text-align: center;">
-            <div class="modal-header">
-                <h3><i class="fa-solid fa-gift"></i> 命运的选择是...</h3>
-                <button class="close-btn" onclick="closeModal('resultModal')">&times;</button>
-            </div>
-            <div class="result-content" id="resultText">
-                <!-- Result here -->
-            </div>
-            <div style="margin-top: 2rem;">
-                <button class="btn btn-primary" onclick="closeModal('resultModal')">确定</button>
-            </div>
-        </div>
+    <div class="wheel-container">
+        <div class="pointer"></div>
+        <div id="wheel"></div>
+        <button id="spinBtn" class="spin-btn">SPIN</button>
     </div>
 
-    <!-- Toast Container -->
-    <div id="toast-container" class="toast-container"></div>
+    <div id="resultMessage"></div>
+    
+    {% if shared_data %}
+    <div style="text-align: center; color: var(--text-muted); margin-top: 1rem;">
+        <i class="fa-solid fa-info-circle"></i> 正在访问共享的转盘
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
 
-    <script>
-        const canvas = document.getElementById('wheelCanvas');
-        const ctx = canvas.getContext('2d');
-        const wheelWrapper = document.getElementById('wheelWrapper');
-        const spinBtn = document.getElementById('spinBtn');
-        const itemsInput = document.getElementById('itemsInput');
-        const updateBtn = document.getElementById('updateBtn');
-        const resultModal = document.getElementById('resultModal');
-        const resultText = document.getElementById('resultText');
+{% block scripts %}
+<script>
+    const wheel = document.getElementById('wheel');
+    const spinBtn = document.getElementById('spinBtn');
+    const resultMsg = document.getElementById('resultMessage');
+    const shareBtn = document.getElementById('shareGameBtn');
+    
+    let isSpinning = false;
+    let rotation = 0;
+
+    const prizes = ["大奖", "谢谢参与", "积分 +10", "谢谢参与", "优惠券", "谢谢参与", "再来一次", "谢谢参与"];
+
+    spinBtn.addEventListener('click', () => {
+        if (isSpinning) return;
         
-        let items = [];
-        let colors = [];
-        let currentRotation = 0;
-        let isSpinning = false;
+        isSpinning = true;
+        resultMsg.innerText = '';
         
-        const presets = {
-            'eat': "今晚吃火锅\n今晚吃日料\n今晚吃烧烤\n今晚吃沙拉\n回家自己做\n点个外卖吧\n随便吃点面\n饿一顿减肥",
-            'activity': "宅家打游戏\n去逛街购物\n看一场电影\n去公园散步\n图书馆看书\n周边自驾游\n打扫房间\n去健身房",
-            'drink': "冰美式\n生椰拿铁\n珍珠奶茶\n果茶\n气泡水\n白开水\n可口可乐\n不喝了"
-        };
+        // Random spin between 5 and 10 full rotations plus a random prize slice
+        const randomRotate = Math.floor(Math.random() * 360) + 1800;
+        rotation += randomRotate;
         
-        // JS injected data
-        const isPublicMode = JSON.parse('{{ "true" if is_public else "false" }}');
-        const sharedDataStr = "{{ shared_data if is_public else '' }}";
+        wheel.style.transform = `rotate(${rotation}deg)`;
         
-        // Setup initial items
-        function initItems() {
-            let rawList = [];
-            
-            if (isPublicMode) {
-                // Decode from base64
-                if (sharedDataStr) {
-                    try {
-                        const decodedStr = decodeURIComponent(atob(sharedDataStr));
-                        rawList = decodedStr.split('\n');
-                    } catch(e) {
-                        // Fallback on error
-                        rawList = ["解析错误", "分享链接可能损坏"];
-                    }
+        // Calculate prize after animation (4s)
+        setTimeout(() => {
+            isSpinning = false;
+            const actualRotation = rotation % 360;
+            // 8 prizes, each 45 degrees. Pointer is at top (0 deg).
+            // Rotation is clockwise. Slice 0 is 0-45 deg.
+            // When we rotate X degrees, the slice at top is (360 - X%360) 
+            const prizeIndex = Math.floor(((360 - (actualRotation % 360)) % 360) / 45);
+            resultMsg.innerText = `恭喜获得: ${prizes[prizeIndex]}`;
+            showToast(`转盘结束: ${prizes[prizeIndex]}`, 'success');
+        }, 4000);
+    });
+
+    if (shareBtn) {
+        shareBtn.addEventListener('click', async () => {
+            try {
+                const response = await fetch('/game/share', { method: 'POST' });
+                const result = await response.json();
+                if(result.success) {
+                    const url = window.location.origin + '/s/g/' + result.share_id;
+                    navigator.clipboard.writeText(url).then(() => {
+                        showToast("转盘分享链接已复制", 'success');
+                    });
                 } else {
-                    rawList = ["没有提供选项"];
+                    showToast(result.message, 'error');
                 }
-            } else {
-                // Try to load from localStorage first
-                const savedItems = localStorage.getItem('nexfile_wheel_items');
-                if (savedItems && savedItems.trim() !== '') {
-                    itemsInput.value = savedItems;
-                }
-                rawList = itemsInput.value.split('\n');
+            } catch (err) {
+                showToast("分享失败", 'error');
             }
-            
-            items = rawList.map(i => i.trim()).filter(i => i.length > 0);
-            
-            if (items.length < 2 && !isPublicMode) {
-                showToast("请至少输入2个选项", "error");
-                return false;
-            }
-            if (items.length === 0 && isPublicMode) items = ["没有选项"];
-            if (items.length === 1 && isPublicMode) items.push("就这个了");
-            
-            // Generate monochrome grayscale palette
-            colors = [];
-            const grayPalette = ["#0f172a", "#1e293b", "#334155", "#475569", "#64748b", "#94a3b8", "#cbd5e1", "#e2e8f0"];
-            for (let i = 0; i < items.length; i++) {
-                colors.push(grayPalette[i % grayPalette.length]);
-            }
-            return true;
-        }
-        
-        function drawWheel() {
-            const centerX = canvas.width / 2;
-            const centerY = canvas.height / 2;
-            const radius = Math.min(centerX, centerY);
-            
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            const sliceAngle = (2 * Math.PI) / items.length;
-            
-            for (let i = 0; i < items.length; i++) {
-                const startAngle = i * sliceAngle;
-                const endAngle = startAngle + sliceAngle;
-                
-                // Draw slice
-                ctx.beginPath();
-                ctx.moveTo(centerX, centerY);
-                ctx.arc(centerX, centerY, radius, startAngle, endAngle);
-                ctx.fillStyle = colors[i];
-                ctx.fill();
-                ctx.lineWidth = 2;
-                ctx.strokeStyle = "rgba(0,0,0,0.5)";
-                ctx.stroke();
-                
-                // Draw text
-                ctx.save();
-                ctx.translate(centerX, centerY);
-                ctx.rotate(startAngle + sliceAngle / 2);
-                ctx.textAlign = "right";
-                ctx.fillStyle = i >= Math.floor(items.length / 2) ? "#0f172a" : "#f8fafc";
-                ctx.font = "bold 16px Inter, sans-serif";
-                
-                // Add text shadow for better readability
-                ctx.shadowColor = "rgba(15,23,42,0.35)";
-                ctx.shadowBlur = 4;
-                ctx.shadowOffsetX = 1;
-                ctx.shadowOffsetY = 1;
-                
-                // Truncate long text
-                const text = items[i];
-                const displayText = text.length > 10 ? text.substring(0, 9) + '...' : text;
-                ctx.fillText(displayText, radius - 20, 5);
-                ctx.restore();
-            }
-            
-            // Draw center dot
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, 15, 0, 2 * Math.PI);
-            ctx.fillStyle = "#1e293b";
-            ctx.fill();
-            ctx.lineWidth = 3;
-            ctx.strokeStyle = "#94a3b8";
-            ctx.stroke();
-        }
-        
-        function updateWheel() {
-            if (initItems()) {
-                drawWheel();
-                // Save to local storage
-                if (!isPublicMode) {
-                    localStorage.setItem('nexfile_wheel_items', itemsInput.value);
-                }
-                // Reset rotation visually
-                wheelWrapper.style.transition = 'none';
-                wheelWrapper.style.transform = `rotate(${currentRotation}deg)`;
-                // Force reflow
-                void wheelWrapper.offsetWidth; 
-                showToast("转盘选项已更新", "success");
-            }
-        }
-        
-        function spin() {
-            if (isSpinning || items.length < 2) return;
-            isSpinning = true;
-            spinBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 旋转中...';
-            spinBtn.disabled = true;
-            
-            // Calculate spin amount
-            // Spin at least 5 times (5 * 360 = 1800) plus a random angle
-            const spinBase = 1800;
-            const randomExtra = Math.floor(Math.random() * 360);
-            
-            // Add to current rotation (accounting for previous spins)
-            currentRotation += spinBase + randomExtra;
-            
-            // Apply animation via CSS
-            wheelWrapper.style.transition = 'transform 5s cubic-bezier(0.1, 0.7, 0.1, 1)'; // smooth deceleration
-            wheelWrapper.style.transform = `rotate(${currentRotation}deg)`;
-            
-            // Wait for animation to finish
-            setTimeout(() => {
-                isSpinning = false;
-                spinBtn.innerHTML = '<i class="fa-solid fa-bolt"></i> 立刻旋转';
-                spinBtn.disabled = false;
-                
-                // Calculate winner
-                // The pointer is at the top (top is -90 degrees in canvas drawing space)
-                // However, CSS rotation rotates the parent.
-                // We need the effective rotation mapped to 0-360.
-                const actualDeg = currentRotation % 360;
-                
-                // CSS rotation goes clockwise. 
-                // Slice 0 starts at angle 0 (right/3 o'clock).
-                // Pointer is at Top (12 o'clock, which is -90 deg relative to Slice 0 start).
-                // Mathematical calculation to find which slice is at -90deg (Top) after rotation:
-                const sliceAngle = 360 / items.length;
-                
-                // Offset by 90 (to put origin at Top), subtract actual rotation, modulo 360, divide by slice.
-                let winningIndex = Math.floor((360 - (actualDeg + 90) % 360) / sliceAngle) % items.length;
-                
-                // Handle negative modulo correctly
-                if (winningIndex < 0) winningIndex += items.length;
-                
-                // Show result
-                resultText.textContent = items[winningIndex];
-                resultModal.classList.add('active');
-                
-                // Fire confetti!
-                fireConfetti();
-                
-            }, 5000); // 5 seconds matches CSS transition time
-        }
-        
-        function fireConfetti() {
-            const count = 200;
-            const defaults = {
-                origin: { y: 0.7 }
-            };
-
-            function fire(particleRatio, opts) {
-                confetti(Object.assign({}, defaults, opts, {
-                    particleCount: Math.floor(count * particleRatio)
-                }));
-            }
-
-            fire(0.25, { spread: 26, startVelocity: 55 });
-            fire(0.2, { spread: 60 });
-            fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8 });
-            fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2 });
-            fire(0.1, { spread: 120, startVelocity: 45 });
-        }
-        
-        // Event Listeners
-        spinBtn.addEventListener('click', spin);
-        
-        if (!isPublicMode) {
-            updateBtn.addEventListener('click', updateWheel);
-            
-            const shareBtn = document.getElementById('shareBtn');
-            shareBtn.addEventListener('click', async () => {
-                if (items.length < 2) {
-                    showToast("请先在左侧输入至少2个有效选项再分享", "error");
-                    return;
-                }
-
-                const dataString = items.join('\n');
-                try {
-                    const encodedUrlData = btoa(encodeURIComponent(dataString));
-                    const response = await fetch('/game/share', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ data: encodedUrlData })
-                    });
-                    const result = await response.json();
-
-                    if (!response.ok || !result.success || !result.share_id) {
-                        throw new Error(result.message || '生成短链接失败');
-                    }
-
-                    const shareUrl = `${window.location.origin}/g/${result.share_id}`;
-                    navigator.clipboard.writeText(shareUrl).then(() => {
-                        showToast("转盘分享链接已复制到剪贴板！", "success");
-                    }).catch(() => {
-                        showToast("复制失败，您的链接是: " + shareUrl, "error");
-                    });
-                } catch (e) {
-                    showToast(e.message || "生成分享链接时出错", "error");
-                }
-            });
-            
-            document.querySelectorAll('.preset-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const presetKey = e.target.getAttribute('data-preset');
-                    itemsInput.value = presets[presetKey];
-                    updateWheel();
-                });
-            });
-        }
-        
-        function closeModal(id) {
-            document.getElementById(id).classList.remove('active');
-        }
-        
-        function showToast(message, type = 'success') {
-            const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
-            toast.className = `toast toast-${type}`;
-            const icon = type === 'success' ? '<i class="fa-solid fa-circle-check"></i>' : '<i class="fa-solid fa-circle-exclamation"></i>';
-            toast.innerHTML = `${icon} <span>${message}</span>`;
-            container.appendChild(toast);
-            setTimeout(() => toast.classList.add('show'), 10);
-            setTimeout(() => {
-                toast.classList.remove('show');
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
-        }
-        
-        // Init
-        initItems();
-        drawWheel();
-        
-    </script>
-    </div><!-- .app-layout -->
-</body>
-</html>
+        });
+    }
+</script>
+{% endblock %}
