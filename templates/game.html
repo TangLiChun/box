@@ -8,20 +8,66 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
+        :root {
+            --gw-bg: #f8fafc;
+            --gw-surface: #ffffff;
+            --gw-border: #dbe2ea;
+            --gw-text: #1f2937;
+            --gw-muted: #64748b;
+            --gw-muted-2: #475569;
+            --gw-primary: #334155;
+            --gw-primary-dark: #1f2937;
+        }
+
         .game-container {
             display: flex;
             gap: 2rem;
             align-items: flex-start;
             margin-top: 1rem;
         }
-        
-        @media (max-width: 900px) {
-            .game-container {
-                flex-direction: column;
-                align-items: center;
-            }
+
+        .game-hero h2,
+        .controls-panel h3 {
+            color: var(--gw-text);
         }
-        
+
+        .game-hero {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+
+        .helper-line {
+            color: var(--gw-muted);
+            margin-bottom: 1rem;
+            line-height: 1.7;
+        }
+
+        .feature-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 0.9rem;
+        }
+
+        .chip {
+            border: 1px solid var(--gw-border);
+            background: #f1f5f9;
+            color: var(--gw-muted-2);
+            padding: 0.28rem 0.6rem;
+            border-radius: 999px;
+            font-size: 0.78rem;
+        }
+
+        .wheel-panel,
+        .controls-panel {
+            border: 1px solid var(--gw-border);
+            background: linear-gradient(180deg, var(--gw-surface) 0%, var(--gw-bg) 100%);
+            box-shadow: 0 12px 28px rgba(15, 23, 42, 0.10);
+            backdrop-filter: blur(8px);
+        }
+
         .wheel-panel {
             flex: 1;
             display: flex;
@@ -31,71 +77,105 @@
             min-height: 500px;
             position: relative;
         }
-        
+
         .controls-panel {
             width: 350px;
             display: flex;
             flex-direction: column;
             gap: 1rem;
         }
-        
+
         .wheel-wrapper {
             position: relative;
             width: 400px;
             height: 400px;
             border-radius: 50%;
-            box-shadow: 0 0 30px rgba(0, 0, 0, 0.5), 0 0 15px rgba(56, 189, 248, 0.3);
-            border: 4px solid var(--card-border);
+            border: 6px solid #cbd5e1;
+            box-shadow: 0 0 0 10px #e2e8f0, 0 16px 30px rgba(15, 23, 42, 0.12);
             overflow: hidden;
-            background: rgba(0, 0, 0, 0.3);
-            transition: transform 5s cubic-bezier(0.25, 0.1, 0.15, 1); /* Ease out custom */
+            background: var(--gw-bg);
+            transition: transform 5s cubic-bezier(0.25, 0.1, 0.15, 1);
         }
-        
+
         .wheel-pointer {
             position: absolute;
             top: -15px;
             left: 50%;
             transform: translateX(-50%);
-            width: 0; 
-            height: 0; 
+            width: 0;
+            height: 0;
             border-left: 15px solid transparent;
             border-right: 15px solid transparent;
-            border-top: 35px solid var(--danger);
+            border-top: 35px solid #334155;
             z-index: 10;
-            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));
+            filter: drop-shadow(0 4px 6px rgba(15, 23, 42, 0.25));
         }
-        
+
+        .wheel-hub {
+            position: absolute;
+            width: 72px;
+            height: 72px;
+            border-radius: 999px;
+            background: radial-gradient(circle at 30% 30%, #ffffff, #cbd5e1);
+            border: 6px solid #64748b;
+            box-shadow: 0 8px 18px rgba(15, 23, 42, 0.2);
+            z-index: 11;
+            pointer-events: none;
+        }
+
         canvas {
             width: 100%;
             height: 100%;
             display: block;
         }
 
+        .btn.btn-primary {
+            background: linear-gradient(180deg, var(--gw-primary) 0%, var(--gw-primary-dark) 100%);
+            border-color: var(--gw-primary);
+            color: #f8fafc;
+        }
+
+        .btn.btn-primary:hover {
+            filter: brightness(1.05);
+        }
+
+        .btn.btn-outline {
+            border-color: #cbd5e1;
+            color: var(--gw-primary);
+            background: #ffffff;
+        }
+
+        .btn.btn-outline:hover {
+            background: #f1f5f9;
+            border-color: #94a3b8;
+        }
+
         .spin-btn {
-            margin-top: 2rem;
-            font-size: 1.5rem;
-            padding: 1rem 3rem;
-            border-radius: 50px;
+            margin-top: 1.6rem;
+            font-size: 1.1rem;
+            padding: 0.95rem 2.8rem;
+            border-radius: 999px;
             text-transform: uppercase;
-            letter-spacing: 2px;
-            font-weight: bold;
-            box-shadow: 0 0 20px rgba(56, 189, 248, 0.6);
+            letter-spacing: 1px;
+            font-weight: 700;
+            min-width: 240px;
+            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.16);
             animation: pulse 2s infinite;
         }
-        
+
         @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(129, 140, 248, 0.7); }
-            70% { box-shadow: 0 0 0 15px rgba(129, 140, 248, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(129, 140, 248, 0); }
+            0% { box-shadow: 0 0 0 0 rgba(100, 116, 139, 0.30); }
+            70% { box-shadow: 0 0 0 14px rgba(100, 116, 139, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(100, 116, 139, 0); }
         }
 
         .items-textarea {
             width: 100%;
             height: 250px;
-            background: rgba(0, 0, 0, 0.2);
-            border: 1px solid var(--card-border);
-            border-radius: 8px;
-            color: var(--text-color);
+            background: var(--gw-bg);
+            border: 1px solid var(--gw-border);
+            border-radius: 10px;
+            color: var(--gw-text);
             padding: 1rem;
             font-size: 1rem;
             resize: vertical;
@@ -103,25 +183,73 @@
             line-height: 1.6;
             margin-bottom: 1rem;
         }
-        
+
         .items-textarea:focus {
-            border-color: var(--accent-1);
+            border-color: #94a3b8;
+            box-shadow: 0 0 0 3px rgba(148, 163, 184, 0.2);
         }
-        
-        /* Modal Results */
+
+        .action-row {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: space-between;
+        }
+
+        .preset-title {
+            color: var(--gw-muted);
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .preset-wrap {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .public-title {
+            margin: 0;
+            color: var(--gw-text);
+            font-size: 2rem;
+            font-weight: 800;
+            letter-spacing: 0.02em;
+        }
+
+        .public-subtitle {
+            color: var(--gw-muted);
+            margin-top: 0.5rem;
+        }
+
         .result-content {
             text-align: center;
             font-size: 2.5rem;
             font-weight: bold;
-            color: var(--accent-1);
+            color: var(--gw-text);
             padding: 2rem 0;
-            text-shadow: 0 2px 10px rgba(56, 189, 248, 0.3);
+            text-shadow: 0 2px 8px rgba(148, 163, 184, 0.35);
             animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-        
+
         @keyframes popIn {
             0% { transform: scale(0.5); opacity: 0; }
             100% { transform: scale(1); opacity: 1; }
+        }
+
+        @media (max-width: 900px) {
+            .game-container {
+                flex-direction: column;
+                align-items: center;
+            }
+            .controls-panel {
+                width: 100%;
+            }
+            .wheel-wrapper {
+                width: min(88vw, 400px);
+                height: min(88vw, 400px);
+            }
+            .spin-btn {
+                min-width: 200px;
+            }
         }
     </style>
 </head>
@@ -154,13 +282,20 @@
             <div class="container">
         {% if not is_public %}
         <div class="glass-panel" style="margin-bottom: 2rem;">
-            <h2><i class="fa-solid fa-star"></i> 幸运大转盘</h2>
-            <p style="color: #94a3b8; margin-bottom: 1rem;">无法下定决心？让命运帮你选择！在右侧输入选项（每行一个），点击旋转按钮即可。</p>
+            <div class="game-hero">
+                <h2><i class="fa-solid fa-star"></i> 幸运大转盘</h2>
+            </div>
+            <p class="helper-line">无法下定决心？让命运帮你选择！在右侧输入选项（每行一个），点击旋转按钮即可。</p>
+            <div class="feature-chips">
+                <span class="chip"><i class="fa-solid fa-wand-magic-sparkles"></i> 极简灰白</span>
+                <span class="chip"><i class="fa-solid fa-link"></i> 短链接分享</span>
+                <span class="chip"><i class="fa-solid fa-mobile-screen-button"></i> 移动端适配</span>
+            </div>
         {% else %}
         <!-- Compact Public Header -->
         <header style="margin-bottom: 2rem; text-align: center;">
-            <h1 class="gradient-text" style="margin: 0;"><i class="fa-solid fa-star"></i> 他人的幸运转盘</h1>
-            <p style="color: #94a3b8; margin-top: 0.5rem;">有人向你分享了一个大转盘，点击旋转试试手气吧！</p>
+            <h1 class="public-title"><i class="fa-solid fa-star"></i> 他人的幸运转盘</h1>
+            <p class="public-subtitle">有人向你分享了一个大转盘，点击旋转试试手气吧！</p>
         </header>
         <div class="glass-panel" style="margin-bottom: 2rem;">
         {% endif %}
@@ -171,6 +306,7 @@
                 <div class="wheel-wrapper" id="wheelWrapper">
                     <canvas id="wheelCanvas" width="400" height="400"></canvas>
                 </div>
+                <div class="wheel-hub" aria-hidden="true"></div>
                 <button class="btn btn-primary spin-btn" id="spinBtn"><i class="fa-solid fa-bolt"></i> 立刻旋转</button>
             </div>
             
@@ -187,14 +323,14 @@
 随便吃点面
 饿一顿减肥
 </textarea>
-                <div style="display: flex; gap: 0.5rem; justify-content: space-between;">
+                <div class="action-row">
                     <button class="btn btn-outline" id="updateBtn" style="flex: 1;"><i class="fa-solid fa-arrows-rotate"></i> 更新选项</button>
                     <button class="btn btn-primary" id="shareBtn" style="flex: 1;"><i class="fa-solid fa-share-nodes"></i> 分享转盘</button>
                 </div>
                 
                 <div style="margin-top: 2rem;">
-                    <h4 style="color: #94a3b8; margin-bottom: 0.5rem; font-size: 0.9rem;">预设选项</h4>
-                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                    <h4 class="preset-title">预设选项</h4>
+                    <div class="preset-wrap">
                         <button class="btn btn-sm btn-outline preset-btn" data-preset="eat">吃饭选择</button>
                         <button class="btn btn-sm btn-outline preset-btn" data-preset="activity">周末去哪</button>
                         <button class="btn btn-sm btn-outline preset-btn" data-preset="drink">喝点什么</button>
@@ -284,15 +420,11 @@
             if (items.length === 0 && isPublicMode) items = ["没有选项"];
             if (items.length === 1 && isPublicMode) items.push("就这个了");
             
-            // Generate distinct vibrant colors using HSL
+            // Generate monochrome grayscale palette
             colors = [];
-            const hueStep = 360 / items.length;
+            const grayPalette = ["#0f172a", "#1e293b", "#334155", "#475569", "#64748b", "#94a3b8", "#cbd5e1", "#e2e8f0"];
             for (let i = 0; i < items.length; i++) {
-                // Alternating lightness/saturation for more contrast
-                const h = Math.floor(i * hueStep);
-                const s = 65 + (i % 2) * 20; // 65% or 85%
-                const l = 45 + (i % 2) * 15; // 45% or 60%
-                colors.push(`hsl(${h}, ${s}%, ${l}%)`);
+                colors.push(grayPalette[i % grayPalette.length]);
             }
             return true;
         }
@@ -325,11 +457,11 @@
                 ctx.translate(centerX, centerY);
                 ctx.rotate(startAngle + sliceAngle / 2);
                 ctx.textAlign = "right";
-                ctx.fillStyle = "#ffffff";
+                ctx.fillStyle = i >= Math.floor(items.length / 2) ? "#0f172a" : "#f8fafc";
                 ctx.font = "bold 16px Inter, sans-serif";
                 
                 // Add text shadow for better readability
-                ctx.shadowColor = "rgba(0,0,0,0.8)";
+                ctx.shadowColor = "rgba(15,23,42,0.35)";
                 ctx.shadowBlur = 4;
                 ctx.shadowOffsetX = 1;
                 ctx.shadowOffsetY = 1;
@@ -347,7 +479,7 @@
             ctx.fillStyle = "#1e293b";
             ctx.fill();
             ctx.lineWidth = 3;
-            ctx.strokeStyle = "var(--accent-1)";
+            ctx.strokeStyle = "#94a3b8";
             ctx.stroke();
         }
         
@@ -445,24 +577,34 @@
             updateBtn.addEventListener('click', updateWheel);
             
             const shareBtn = document.getElementById('shareBtn');
-            shareBtn.addEventListener('click', () => {
-                if(items.length < 2) {
+            shareBtn.addEventListener('click', async () => {
+                if (items.length < 2) {
                     showToast("请先在左侧输入至少2个有效选项再分享", "error");
                     return;
                 }
+
                 const dataString = items.join('\n');
                 try {
-                    // Encode for URL safely
                     const encodedUrlData = btoa(encodeURIComponent(dataString));
-                    const shareUrl = `${window.location.origin}/public/game?data=${encodedUrlData}`;
-                    
+                    const response = await fetch('/game/share', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ data: encodedUrlData })
+                    });
+                    const result = await response.json();
+
+                    if (!response.ok || !result.success || !result.share_id) {
+                        throw new Error(result.message || '生成短链接失败');
+                    }
+
+                    const shareUrl = `${window.location.origin}/g/${result.share_id}`;
                     navigator.clipboard.writeText(shareUrl).then(() => {
                         showToast("转盘分享链接已复制到剪贴板！", "success");
-                    }).catch(err => {
-                        showToast("复制失败，您的连接是: " + shareUrl, "error");
+                    }).catch(() => {
+                        showToast("复制失败，您的链接是: " + shareUrl, "error");
                     });
-                } catch(e) {
-                    showToast("生成分享链接时出错", "error");
+                } catch (e) {
+                    showToast(e.message || "生成分享链接时出错", "error");
                 }
             });
             
