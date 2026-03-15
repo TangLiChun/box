@@ -181,6 +181,38 @@ class FileManagerSecurityTests(unittest.TestCase):
         self.assertIsNotNone(payload)
         self.assertEqual(payload['document']['title'], 'report.txt')
 
+
+    def test_download_requires_auth_unless_onlyoffice_download_token_is_provided(self):
+        target = self.uploads / 'report.txt'
+        target.write_text('download body', encoding='utf-8')
+
+        anon_client = app_module.app.test_client()
+
+        redirect_resp = anon_client.get('/download/report.txt')
+        self.assertEqual(redirect_resp.status_code, 302)
+        self.assertIn('/login', redirect_resp.headers.get('Location', ''))
+
+        with app_module.app.app_context():
+            token = app_module.generate_onlyoffice_download_token('report.txt')
+
+        ok_resp = anon_client.get(f'/download/report.txt?token={token}')
+        self.assertEqual(ok_resp.status_code, 200)
+        self.assertEqual(ok_resp.data, b'download body')
+
+    def test_editor_uses_ascii_onlyoffice_doc_key_and_signed_download_url(self):
+        with app_module.app.app_context():
+            app_module.set_setting('onlyoffice_url', 'https://docs.example.com/')
+
+        filename = '男m测评报告.docx'
+        target = self.uploads / filename
+        target.write_text('body', encoding='utf-8')
+
+        editor_response = self.client.get(f'/editor/{filename}')
+        self.assertEqual(editor_response.status_code, 200)
+        body = editor_response.get_data(as_text=True)
+
+        self.assertRegex(body, r'"key":\s*"doc_[a-f0-9]{32}"')
+        self.assertIn('/download/%E7%94%B7m%E6%B5%8B%E8%AF%84%E6%8A%A5%E5%91%8A.docx?token=', body)
     def test_onlyoffice_callback_requires_valid_jwt_when_secret_is_configured(self):
         target = self.uploads / 'report.txt'
         target.write_text('old content', encoding='utf-8')
