@@ -1218,10 +1218,11 @@ def onlyoffice_editor(filename):
     elif file_ext in ['.ppt', '.pptx']:
         document_type = 'slide'
         
-    # Generate a unique, ASCII-safe key for the document to avoid ONLYOFFICE 400 errors.
+    # Generate a stable key with restricted characters and bounded length.
+    # Include filename and mtime so key rotates when the file is updated.
     stat = os.stat(filepath)
-    doc_key_seed = f"{safe_name}:{int(stat.st_mtime)}".encode('utf-8')
-    doc_key = f"doc_{hashlib.sha256(doc_key_seed).hexdigest()[:32]}"
+    key_seed = f"{safe_name}:{int(stat.st_mtime)}"
+    doc_key = f"doc_{hashlib.sha256(key_seed.encode('utf-8')).hexdigest()[:32]}"
     
     # In a real production app, document_url and callback_url must be accessible by ONLYOFFICE server
     # For local dev, we use request.host_url
