@@ -15,7 +15,7 @@ import sys
 import html
 import socket
 import tempfile
-from urllib.parse import urlparse
+from urllib.parse import urlparse, quote as url_quote
 import urllib.request
 from datetime import datetime, timezone
 from flask import Flask, render_template, request, redirect, url_for, session, send_from_directory, flash, jsonify, g, abort
@@ -1390,7 +1390,6 @@ def onlyoffice_editor(filename):
     if callback_base:
         dl_token = generate_onlyoffice_download_token(safe_name)
         cb_token = generate_onlyoffice_callback_token(safe_name)
-        from urllib.parse import quote as url_quote
         encoded_name = url_quote(safe_name, safe='')
         document_url = f"{callback_base}/download/{encoded_name}?token={dl_token}"
         callback_url = f"{callback_base}/callback/{encoded_name}?token={cb_token}"
