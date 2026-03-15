@@ -91,7 +91,7 @@
                                 {% endif %}
                                 <a href="{{ url_for('download_file', filename=file.name) }}" class="btn btn-sm btn-primary" title="下载"><i class="fa-solid fa-download"></i></a>
                                 
-                                {% if onlyoffice_url and file.name.lower().endswith(('.docx', '.xlsx', '.pptx', '.txt')) %}
+                                {% if onlyoffice_url and (not office_extensions or file.name.lower().endswith(office_extensions)) %}
                                 <a href="{{ url_for('onlyoffice_editor', filename=file.name) }}" class="btn btn-sm btn-outline" style="color: var(--success);" title="在 ONLYOFFICE 中编辑"><i class="fa-solid fa-file-pen"></i></a>
                                 {% endif %}
                                 
@@ -123,6 +123,9 @@
                     </div>
                     <div class="file-card-actions">
                          <a href="{{ url_for('download_file', filename=file.name) }}" class="card-action-btn" title="下载"><i class="fa-solid fa-download"></i></a>
+                         {% if onlyoffice_url and (not office_extensions or file.name.lower().endswith(office_extensions)) %}
+                         <a href="{{ url_for('onlyoffice_editor', filename=file.name) }}" class="card-action-btn" style="color: var(--success);" title="在 ONLYOFFICE 中编辑"><i class="fa-solid fa-file-pen"></i></a>
+                         {% endif %}
                          <button onclick='shareItem("file", {{ file.name|tojson }}, this)' class="card-action-btn" title="分享"><i class="fa-solid fa-share-nodes"></i></button>
                          <button onclick="deleteFile(this)" data-filename="{{ file.name }}" class="card-action-btn danger" title="删除"><i class="fa-solid fa-trash"></i></button>
                     </div>

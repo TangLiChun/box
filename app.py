@@ -59,6 +59,18 @@ app.config['NOTES_FOLDER'] = NOTES_FOLDER
 app.config['TRASH_FOLDER'] = TRASH_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100 MB max limit
 
+# ONLYOFFICE supported formats and their document types
+ONLYOFFICE_FORMATS = {
+    # Word
+    '.docx': 'word', '.doc': 'word', '.odt': 'word', '.rtf': 'word', '.txt': 'word',
+    # Cell
+    '.xlsx': 'cell', '.xls': 'cell', '.ods': 'cell', '.csv': 'cell',
+    # Slide
+    '.pptx': 'slide', '.ppt': 'slide', '.odp': 'slide',
+    # PDF (usually read-only in ONLYOFFICE Document Server)
+    '.pdf': 'pdf'
+}
+
 # --- Database helpers ---
 
 def get_db():
@@ -714,7 +726,11 @@ def index():
 
     files.sort(key=lambda x: x['size_raw'], reverse=True)
     onlyoffice_url = get_setting('onlyoffice_url')
-    return render_template('index.html', files=files, current_user=session['username'], onlyoffice_url=onlyoffice_url)
+    return render_template('index.html', 
+                          files=files, 
+                          current_user=session['username'], 
+                          onlyoffice_url=onlyoffice_url,
+                          office_extensions=tuple(ONLYOFFICE_FORMATS.keys()))
 
 @app.route('/download/<filename>')
 def download_file(filename):
@@ -1345,11 +1361,10 @@ def onlyoffice_editor(filename):
     file_ext = os.path.splitext(safe_name)[1].lower()
     
     # Determine document type for ONLYOFFICE
-    document_type = 'word'
-    if file_ext in ['.xls', '.xlsx', '.csv']:
-        document_type = 'cell'
-    elif file_ext in ['.ppt', '.pptx']:
-        document_type = 'slide'
+    document_type = ONLYOFFICE_FORMATS.get(file_ext)
+    if not document_type:
+        flash(f'不支持编辑 {file_ext} 格式')
+        return redirect(url_for('index'))
         
     # Generate a stable key with restricted characters and bounded length.
     # Include filename and mtime so key rotates when the file is updated.
@@ -1364,8 +1379,8 @@ def onlyoffice_editor(filename):
     if callback_base:
         dl_token = generate_onlyoffice_download_token(safe_name)
         cb_token = generate_onlyoffice_callback_token(safe_name)
-        from werkzeug.urls import url_quote
-        encoded_name = url_quote(safe_name)
+        from urllib.parse import quote as url_quote
+        encoded_name = url_quote(safe_name, safe='')
         document_url = f"{callback_base}/download/{encoded_name}?token={dl_token}"
         callback_url = f"{callback_base}/callback/{encoded_name}?token={cb_token}"
     else:
