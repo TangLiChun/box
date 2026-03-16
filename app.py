@@ -34,18 +34,39 @@ def load_secret_key(base_dir):
     instance_dir = os.path.join(base_dir, 'instance')
     secret_file = os.path.join(instance_dir, 'secret_key')
 
+    def read_file_secret():
+        with open(secret_file, 'r', encoding='utf-8') as f:
+            saved_secret = f.read().strip()
+        return saved_secret or None
+
     try:
         os.makedirs(instance_dir, exist_ok=True)
-        if os.path.exists(secret_file):
-            with open(secret_file, 'r', encoding='utf-8') as f:
-                file_secret = f.read().strip()
+
+        try:
+            file_secret = read_file_secret()
             if file_secret:
                 return file_secret, 'file', secret_file
+        except FileNotFoundError:
+            pass
 
-        file_secret = secrets.token_hex(32)
-        with open(secret_file, 'w', encoding='utf-8') as f:
-            f.write(file_secret)
-        return file_secret, 'file', secret_file
+        generated_secret = secrets.token_hex(32)
+        try:
+            fd = os.open(secret_file, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+            with os.fdopen(fd, 'w', encoding='utf-8') as f:
+                f.write(generated_secret)
+                f.flush()
+                os.fsync(f.fileno())
+            return generated_secret, 'file', secret_file
+        except FileExistsError:
+            for _ in range(5):
+                try:
+                    file_secret = read_file_secret()
+                    if file_secret:
+                        return file_secret, 'file', secret_file
+                except FileNotFoundError:
+                    pass
+                time.sleep(0.05)
+            raise OSError('secret key file exists but could not be read')
     except OSError:
         return secrets.token_hex(32), 'temporary', None
 
