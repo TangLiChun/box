@@ -133,13 +133,21 @@
 
 {% block scripts %}
 <script>
+    async function parseJsonResponse(response) {
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) {
+            throw new Error(payload.message || `请求失败 (HTTP ${response.status})`);
+        }
+        return payload;
+    }
+
     // Add User
     document.getElementById('addUserForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const formData = new FormData(e.target);
         try {
             const response = await fetch('/admin/users/add', { method: 'POST', body: formData });
-            const result = await response.json();
+            const result = await parseJsonResponse(response);
             if(result.success) {
                 showToast(result.message, 'success');
                 setTimeout(() => location.reload(), 1500);
@@ -147,7 +155,7 @@
                 showToast(result.message, 'error');
             }
         } catch(e) {
-            showToast("网络请求错误", 'error');
+            showToast(e.message || "网络请求错误", 'error');
         }
     });
 
@@ -156,7 +164,7 @@
         if(confirm(`警告：您确定要永久删除用户 ${username} 吗？`)) {
             try {
                 const response = await fetch(`/admin/users/delete/${id}`, { method: 'POST' });
-                const result = await response.json();
+                const result = await parseJsonResponse(response);
                 if(result.success) {
                     showToast(result.message, 'success');
                     document.getElementById(`user-row-${id}`).remove();
@@ -164,7 +172,7 @@
                     showToast(result.message, 'error');
                 }
             } catch(e) {
-                showToast("网络请求错误", 'error');
+                showToast(e.message || "网络请求错误", 'error');
             }
         }
     }
@@ -187,7 +195,7 @@
         const formData = new FormData(e.target);
         try {
             const response = await fetch('/admin/password', { method: 'POST', body: formData });
-            const result = await response.json();
+            const result = await parseJsonResponse(response);
             if(result.success) {
                 showToast(result.message, 'success');
                 closePasswordModal();
@@ -195,7 +203,7 @@
                 showToast(result.message, 'error');
             }
         } catch(e) {
-            showToast("网络请求错误", 'error');
+            showToast(e.message || "网络请求错误", 'error');
         }
     });
 
@@ -205,7 +213,7 @@
         const formData = new FormData(e.target);
         try {
             const response = await fetch('/admin/settings', { method: 'POST', body: formData });
-            const result = await response.json();
+            const result = await parseJsonResponse(response);
             if(result.success) {
                 showToast(result.message, 'success');
                 setTimeout(() => location.reload(), 1000); // Reload to update announcement if changed
@@ -213,7 +221,7 @@
                 showToast(result.message, 'error');
             }
         } catch(e) {
-            showToast("网络请求错误", 'error');
+            showToast(e.message || "网络请求错误", 'error');
         }
     });
 
@@ -225,11 +233,11 @@
         result.textContent = '';
         try {
             const response = await fetch('/admin/onlyoffice/test');
-            const data = await response.json();
+            const data = await parseJsonResponse(response);
             result.textContent = data.message;
             result.style.color = data.success ? 'var(--success)' : 'var(--danger)';
         } catch(e) {
-            result.textContent = '网络请求失败';
+            result.textContent = e.message || '网络请求失败';
             result.style.color = 'var(--danger)';
         } finally {
             btn.disabled = false;
