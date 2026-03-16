@@ -188,6 +188,25 @@ def normalize_managed_filename(filename):
         return None
     return safe_name
 
+def normalize_note_input(form, require_content=False):
+    title = form.get('title', '')
+    if not isinstance(title, str):
+        return None, None, ('标题格式不正确', 400)
+
+    title = title.strip()
+    if not title:
+        return None, None, ('标题不能为空', 400)
+
+    content = form.get('content')
+    if content is None:
+        if require_content:
+            return None, None, ('内容不能为空', 400)
+        content = ''
+    elif not isinstance(content, str):
+        content = str(content)
+
+    return title, content, None
+
 def get_item_folder(item_type):
     if item_type == 'file':
         return app.config['UPLOAD_FOLDER']
@@ -893,11 +912,10 @@ def create_note():
         return redirect(url_for('login'))
         
     if request.method == 'POST':
-        title = request.form.get('title')
-        content = request.form.get('content')
-        
-        if not title:
-            return jsonify({'success': False, 'message': '标题不能为空'})
+        title, content, error = normalize_note_input(request.form)
+        if error:
+            message, status_code = error
+            return jsonify({'success': False, 'message': message}), status_code
             
         filename = secure_filename(title) + '.md'
         filepath = os.path.join(app.config['NOTES_FOLDER'], filename)
@@ -924,11 +942,10 @@ def edit_note(filename):
         return redirect(url_for('notes'))
         
     if request.method == 'POST':
-        new_title = request.form.get('title')
-        content = request.form.get('content')
-        
-        if not new_title:
-             return jsonify({'success': False, 'message': '标题不能为空'})
+        new_title, content, error = normalize_note_input(request.form, require_content=True)
+        if error:
+             message, status_code = error
+             return jsonify({'success': False, 'message': message}), status_code
             
         new_filename = secure_filename(new_title) + '.md'
         new_filepath = os.path.join(app.config['NOTES_FOLDER'], new_filename)
