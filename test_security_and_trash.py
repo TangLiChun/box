@@ -406,6 +406,29 @@ class FileManagerSecurityTests(unittest.TestCase):
             ).fetchone()
             self.assertIsNone(metadata)
 
+    def test_create_note_allows_missing_content_and_writes_empty_body(self):
+        response = self.client.post('/notes/create', data={'title': 'empty-note'})
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.get_json()['success'])
+
+        target = self.notes / 'empty-note.md'
+        self.assertTrue(target.exists())
+        self.assertEqual(target.read_text(encoding='utf-8'), '')
+
+    def test_normalize_note_input_handles_non_string_content(self):
+        class FakeForm:
+            def get(self, key, default=None):
+                values = {
+                    'title': 'editable',
+                    'content': 12345,
+                }
+                return values.get(key, default)
+
+        title, content, error = app_module.normalize_note_input(FakeForm())
+        self.assertIsNone(error)
+        self.assertEqual(title, 'editable')
+        self.assertEqual(content, '12345')
+
 
 if __name__ == '__main__':
     unittest.main()
