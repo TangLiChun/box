@@ -406,6 +406,43 @@ class FileManagerSecurityTests(unittest.TestCase):
             ).fetchone()
             self.assertIsNone(metadata)
 
+    def test_change_password_returns_404_for_nonexistent_user(self):
+        response = self.client.post('/admin/password', data={'user_id': '999999', 'new_password': 'newpass123'})
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.get_json(), {'success': False, 'message': '用户不存在'})
+
+    def test_change_password_rejects_missing_or_invalid_user_id(self):
+        missing_user_id = self.client.post('/admin/password', data={'new_password': 'newpass123'})
+        self.assertEqual(missing_user_id.status_code, 400)
+        self.assertEqual(missing_user_id.get_json(), {'success': False, 'message': '用户 ID 不能为空'})
+
+        invalid_user_id = self.client.post('/admin/password', data={'user_id': 'abc', 'new_password': 'newpass123'})
+        self.assertEqual(invalid_user_id.status_code, 400)
+        self.assertEqual(invalid_user_id.get_json(), {'success': False, 'message': '无效的用户 ID'})
+
+    def test_change_password_returns_200_on_successful_update(self):
+        with app_module.app.app_context():
+            db = app_module.get_db()
+            db.execute(
+                'INSERT INTO users (username, password) VALUES (?, ?)',
+                ('alice', app_module.generate_password_hash('oldpass123'))
+            )
+            db.commit()
+            user = db.execute('SELECT id, password FROM users WHERE username = ?', ('alice',)).fetchone()
+            user_id = user['id']
+            old_hash = user['password']
+
+        response = self.client.post('/admin/password', data={'user_id': str(user_id), 'new_password': 'newpass123'})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_json(), {'success': True, 'message': '密码修改成功'})
+
+        with app_module.app.app_context():
+            db = app_module.get_db()
+            updated_user = db.execute('SELECT password FROM users WHERE id = ?', (user_id,)).fetchone()
+            self.assertIsNotNone(updated_user)
+            self.assertNotEqual(updated_user['password'], old_hash)
+            self.assertTrue(app_module.check_password_hash(updated_user['password'], 'newpass123'))
+
 
 if __name__ == '__main__':
     unittest.main()

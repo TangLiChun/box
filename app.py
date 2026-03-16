@@ -1097,19 +1097,30 @@ def delete_user(user_id):
 def change_password():
     if not is_authenticated():
          return jsonify({'success': False, 'message': '未授权访问'}), 401
-         
-    user_id = request.form.get('user_id')
+
+    user_id_raw = request.form.get('user_id')
     new_password = request.form.get('new_password')
+
+    if user_id_raw is None or str(user_id_raw).strip() == '':
+        return jsonify({'success': False, 'message': '用户 ID 不能为空'}), 400
+
+    try:
+        user_id = int(user_id_raw)
+    except (TypeError, ValueError):
+        return jsonify({'success': False, 'message': '无效的用户 ID'}), 400
     
     # Security: Non-admin can only change their own password
-    if session.get('username') != 'admin' and str(user_id) != str(session.get('user_id')):
+    if session.get('username') != 'admin' and user_id != int(session.get('user_id')):
          return jsonify({'success': False, 'message': '未授权的操作'}), 403
          
     if not new_password:
         return jsonify({'success': False, 'message': '新密码不能为空'})
         
     db = get_db()
-    db.execute('UPDATE users SET password = ? WHERE id = ?', (generate_password_hash(new_password), user_id))
+    cursor = db.execute('UPDATE users SET password = ? WHERE id = ?', (generate_password_hash(new_password), user_id))
+    if cursor.rowcount == 0:
+        return jsonify({'success': False, 'message': '用户不存在'}), 404
+
     db.commit()
     return jsonify({'success': True, 'message': '密码修改成功'})
 
