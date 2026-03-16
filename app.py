@@ -188,7 +188,7 @@ def normalize_managed_filename(filename):
         return None
     return safe_name
 
-def normalize_note_input(form):
+def normalize_note_input(form, require_content=False):
     title = form.get('title', '')
     if not isinstance(title, str):
         return None, None, ('标题格式不正确', 400)
@@ -197,8 +197,10 @@ def normalize_note_input(form):
     if not title:
         return None, None, ('标题不能为空', 400)
 
-    content = form.get('content', '')
+    content = form.get('content')
     if content is None:
+        if require_content:
+            return None, None, ('内容不能为空', 400)
         content = ''
     elif not isinstance(content, str):
         content = str(content)
@@ -940,7 +942,7 @@ def edit_note(filename):
         return redirect(url_for('notes'))
         
     if request.method == 'POST':
-        new_title, content, error = normalize_note_input(request.form)
+        new_title, content, error = normalize_note_input(request.form, require_content=True)
         if error:
              message, status_code = error
              return jsonify({'success': False, 'message': message}), status_code

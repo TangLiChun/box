@@ -415,6 +415,24 @@ class FileManagerSecurityTests(unittest.TestCase):
         self.assertTrue(target.exists())
         self.assertEqual(target.read_text(encoding='utf-8'), '')
 
+    def test_edit_note_rejects_missing_content_and_preserves_original_on_rename(self):
+        source = self.notes / 'original.md'
+        source.write_text('keep-me', encoding='utf-8')
+
+        response = self.client.post('/notes/edit/original.md', data={'title': 'renamed'})
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            response.get_json(),
+            {
+                'success': False,
+                'message': '内容不能为空'
+            }
+        )
+
+        self.assertTrue(source.exists())
+        self.assertEqual(source.read_text(encoding='utf-8'), 'keep-me')
+        self.assertFalse((self.notes / 'renamed.md').exists())
+
     def test_normalize_note_input_handles_non_string_content(self):
         class FakeForm:
             def get(self, key, default=None):
