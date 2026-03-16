@@ -679,11 +679,11 @@ def index():
     # Handle file upload
     if request.method == 'POST':
         if 'file' not in request.files:
-            return jsonify({'success': False, 'message': '未找到文件部分'})
+            return jsonify({'success': False, 'message': '未找到文件部分'}), 400
         
         file = request.files['file']
         if file.filename == '':
-            return jsonify({'success': False, 'message': '未选择文件'})
+            return jsonify({'success': False, 'message': '未选择文件'}), 400
             
         if file:
             filename = secure_filename(file.filename)
@@ -897,13 +897,13 @@ def create_note():
         content = request.form.get('content')
         
         if not title:
-            return jsonify({'success': False, 'message': '标题不能为空'})
+            return jsonify({'success': False, 'message': '标题不能为空'}), 400
             
         filename = secure_filename(title) + '.md'
         filepath = os.path.join(app.config['NOTES_FOLDER'], filename)
         
         if os.path.exists(filepath):
-            return jsonify({'success': False, 'message': '已存在同名笔记'})
+            return jsonify({'success': False, 'message': '已存在同名笔记'}), 409
             
         with open(filepath, 'w', encoding='utf-8') as f:
             f.write(content)
@@ -928,13 +928,13 @@ def edit_note(filename):
         content = request.form.get('content')
         
         if not new_title:
-             return jsonify({'success': False, 'message': '标题不能为空'})
+             return jsonify({'success': False, 'message': '标题不能为空'}), 400
             
         new_filename = secure_filename(new_title) + '.md'
         new_filepath = os.path.join(app.config['NOTES_FOLDER'], new_filename)
         
         if new_filename != safe_name and os.path.exists(new_filepath):
-             return jsonify({'success': False, 'message': '已存在同名笔记'})
+             return jsonify({'success': False, 'message': '已存在同名笔记'}), 409
              
         if new_filename != safe_name:
             # 先写入新的文件
@@ -1023,9 +1023,9 @@ def update_settings():
     onlyoffice_jwt_secret = request.form.get('onlyoffice_jwt_secret', '').strip()
     onlyoffice_callback_base = request.form.get('onlyoffice_callback_base', '').strip()
     if onlyoffice_url and not onlyoffice_url.startswith(('http://', 'https://')):
-        return jsonify({'success': False, 'message': '请输入有效的 URL (以 http:// 或 https:// 开头)'})
+        return jsonify({'success': False, 'message': '请输入有效的 URL (以 http:// 或 https:// 开头)'}), 400
     if onlyoffice_callback_base and not onlyoffice_callback_base.startswith(('http://', 'https://')):
-        return jsonify({'success': False, 'message': '回调地址必须以 http:// 或 https:// 开头'})
+        return jsonify({'success': False, 'message': '回调地址必须以 http:// 或 https:// 开头'}), 400
     
     set_setting('onlyoffice_url', onlyoffice_url)
     set_setting('onlyoffice_jwt_secret', onlyoffice_jwt_secret)
@@ -1037,7 +1037,7 @@ def update_settings():
 def test_onlyoffice_connection():
     onlyoffice_url = get_setting('onlyoffice_url', '')
     if not onlyoffice_url:
-        return jsonify({'success': False, 'message': 'ONLYOFFICE 地址未配置'})
+        return jsonify({'success': False, 'message': 'ONLYOFFICE 地址未配置'}), 400
     
     test_url = onlyoffice_url.rstrip('/') + '/healthcheck'
     try:
@@ -1046,9 +1046,9 @@ def test_onlyoffice_connection():
             body = resp.read().decode('utf-8', errors='replace').strip()
             if resp.status == 200 and body.lower() == 'true':
                 return jsonify({'success': True, 'message': f'连接成功 ✓ ({test_url})'})
-            return jsonify({'success': False, 'message': f'服务器返回异常: HTTP {resp.status}, body={body[:200]}'})
+            return jsonify({'success': False, 'message': f'服务器返回异常: HTTP {resp.status}, body={body[:200]}'}), 502
     except Exception as e:
-        return jsonify({'success': False, 'message': f'连接失败: {str(e)}'})
+        return jsonify({'success': False, 'message': f'连接失败: {str(e)}'}), 502
 
 @app.route('/admin/update/status')
 @admin_required
@@ -1070,12 +1070,12 @@ def add_user():
     password = request.form.get('password')
     
     if not username or not password:
-        return jsonify({'success': False, 'message': '用户名和密码不能为空'})
+        return jsonify({'success': False, 'message': '用户名和密码不能为空'}), 400
         
     db = get_db()
     # Check if exists
     if db.execute('SELECT id FROM users WHERE username = ?', (username,)).fetchone():
-        return jsonify({'success': False, 'message': '用户名已存在'})
+        return jsonify({'success': False, 'message': '用户名已存在'}), 409
         
     db.execute('INSERT INTO users (username, password) VALUES (?, ?)', 
               (username, generate_password_hash(password)))
@@ -1086,7 +1086,7 @@ def add_user():
 @admin_required
 def delete_user(user_id):
     if user_id == session['user_id']:
-        return jsonify({'success': False, 'message': '不能删除当前登录用户'})
+        return jsonify({'success': False, 'message': '不能删除当前登录用户'}), 400
         
     db = get_db()
     db.execute('DELETE FROM users WHERE id = ?', (user_id,))
@@ -1106,7 +1106,7 @@ def change_password():
          return jsonify({'success': False, 'message': '未授权的操作'}), 403
          
     if not new_password:
-        return jsonify({'success': False, 'message': '新密码不能为空'})
+        return jsonify({'success': False, 'message': '新密码不能为空'}), 400
         
     db = get_db()
     db.execute('UPDATE users SET password = ? WHERE id = ?', (generate_password_hash(new_password), user_id))

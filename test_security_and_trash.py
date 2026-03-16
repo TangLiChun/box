@@ -181,6 +181,37 @@ class FileManagerSecurityTests(unittest.TestCase):
         self.assertIsNotNone(payload)
         self.assertEqual(payload['document']['title'], 'report.txt')
 
+    def test_admin_settings_rejects_invalid_onlyoffice_urls_with_4xx(self):
+        invalid_url_response = self.client.post(
+            '/admin/settings',
+            data={
+                'onlyoffice_url': 'docs.example.com',
+                'onlyoffice_jwt_secret': 'shared-secret',
+                'onlyoffice_callback_base': 'https://callback.example.com',
+            }
+        )
+        self.assertGreaterEqual(invalid_url_response.status_code, 400)
+        self.assertLess(invalid_url_response.status_code, 500)
+        self.assertEqual(
+            invalid_url_response.get_json(),
+            {'success': False, 'message': '请输入有效的 URL (以 http:// 或 https:// 开头)'}
+        )
+
+        invalid_callback_response = self.client.post(
+            '/admin/settings',
+            data={
+                'onlyoffice_url': 'https://docs.example.com',
+                'onlyoffice_jwt_secret': 'shared-secret',
+                'onlyoffice_callback_base': 'callback.example.com',
+            }
+        )
+        self.assertGreaterEqual(invalid_callback_response.status_code, 400)
+        self.assertLess(invalid_callback_response.status_code, 500)
+        self.assertEqual(
+            invalid_callback_response.get_json(),
+            {'success': False, 'message': '回调地址必须以 http:// 或 https:// 开头'}
+        )
+
 
     def test_download_requires_auth_unless_onlyoffice_download_token_is_provided(self):
         target = self.uploads / 'report.txt'
