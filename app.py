@@ -22,6 +22,54 @@ from flask import Flask, render_template, request, redirect, url_for, session, s
 from werkzeug.security import generate_password_hash, check_password_hash
 import markdown
 
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+
+def load_secret_key(base_dir):
+    env_secret = os.getenv('SECRET_KEY')
+    if env_secret:
+        return env_secret, 'env', None
+
+    instance_dir = os.path.join(base_dir, 'instance')
+    secret_file = os.path.join(instance_dir, 'secret_key')
+
+    def read_file_secret():
+        with open(secret_file, 'r', encoding='utf-8') as f:
+            saved_secret = f.read().strip()
+        return saved_secret or None
+
+    try:
+        os.makedirs(instance_dir, exist_ok=True)
+
+        try:
+            file_secret = read_file_secret()
+            if file_secret:
+                return file_secret, 'file', secret_file
+        except FileNotFoundError:
+            pass
+
+        generated_secret = secrets.token_hex(32)
+        try:
+            fd = os.open(secret_file, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+            with os.fdopen(fd, 'w', encoding='utf-8') as f:
+                f.write(generated_secret)
+                f.flush()
+                os.fsync(f.fileno())
+            return generated_secret, 'file', secret_file
+        except FileExistsError:
+            for _ in range(5):
+                try:
+                    file_secret = read_file_secret()
+                    if file_secret:
+                        return file_secret, 'file', secret_file
+                except FileNotFoundError:
+                    pass
+                time.sleep(0.05)
+            raise OSError('secret key file exists but could not be read')
+    except OSError:
+        return secrets.token_hex(32), 'temporary', None
+
 def secure_filename(filename):
     if not filename:
         return 'unnamed'
@@ -40,15 +88,18 @@ def secure_filename(filename):
     return filename
 
 app = Flask(__name__)
-# Generate a secret key for session management
-app.secret_key = os.getenv('SECRET_KEY', secrets.token_hex(32))
+app.secret_key, secret_key_source, secret_key_file = load_secret_key(BASE_DIR)
 
 # Configuration
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')
 NOTES_FOLDER = os.path.join(BASE_DIR, 'notes')
 TRASH_FOLDER = os.path.join(BASE_DIR, 'trash')
 DATABASE = os.path.join(BASE_DIR, 'users.db')
+
+if secret_key_source == 'temporary':
+    app.logger.warning('WARNING: 使用了临时随机 SECRET_KEY，本次重启后会话将失效。生产环境请配置环境变量 SECRET_KEY。')
+elif secret_key_source == 'file':
+    app.logger.info('SECRET_KEY loaded from %s', secret_key_file)
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(NOTES_FOLDER, exist_ok=True)

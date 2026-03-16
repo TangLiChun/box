@@ -36,8 +36,10 @@ pip install -r requirements.txt && python app.py
 Optional environment variables:
 
 ```bash
-HOST=0.0.0.0 PORT=5000 FLASK_DEBUG=1 python app.py
+HOST=0.0.0.0 PORT=5000 FLASK_DEBUG=1 SECRET_KEY=your-long-random-secret python app.py
 ```
+
+> ⚠️ If `SECRET_KEY` is not fixed (for example, changes between restarts), existing login sessions/cookies will become invalid after restart.
 
 ## ONLYOFFICE Notes
 
