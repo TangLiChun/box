@@ -7,10 +7,9 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
-    <meta name="theme-color" content="#08111d">
+    <meta name="theme-color" content="#060c18">
     <link rel="apple-touch-icon" href="{{ url_for('static', filename='icon-512.png') }}">
     <script>
-        // Theme initialization - avoid flash
         const savedTheme = localStorage.getItem('nexfile-theme') || 'dark';
         document.documentElement.setAttribute('data-theme', savedTheme);
     </script>
@@ -20,9 +19,9 @@
     <div class="app-layout">
         <aside class="sidebar">
             <div class="sidebar-logo">
-                <h1 class="gradient-text" style="font-size: 1.8rem; margin: 0;"><i class="fa-solid fa-layer-group"></i> NexFile</h1>
+                <h1 class="gradient-text" style="font-size: 1.5rem; margin: 0;"><i class="fa-solid fa-layer-group"></i> NexFile</h1>
             </div>
-            
+
             <nav class="sidebar-nav">
                 <a href="{{ url_for('index') }}" class="side-link {% if request.endpoint == 'index' %}active{% endif %}"><i class="fa-solid fa-folder-open"></i> <span>文件管理</span></a>
                 <a href="{{ url_for('notes') }}" class="side-link {% if request.endpoint in ['notes', 'view_note', 'edit_note', 'create_note'] %}active{% endif %}"><i class="fa-solid fa-book"></i> <span>笔记管理</span></a>
@@ -35,7 +34,7 @@
                 <button id="themeToggle" class="theme-toggle-btn">
                     <i class="fa-solid fa-moon"></i> <span>深色模式</span>
                 </button>
-                <div style="margin-bottom: 1rem; color: #94a3b8; font-size: 0.85rem; padding-left: 1.25rem;">
+                <div style="margin-bottom: 0.75rem; color: var(--text-secondary); font-size: 0.82rem; padding-left: 1rem; display: flex; align-items: center; gap: 0.5rem;">
                     <i class="fa-solid fa-circle-user"></i> <span>{{ current_user }}</span>
                 </div>
                 <a href="{{ url_for('logout') }}" class="side-link" style="color: var(--danger);"><i class="fa-solid fa-sign-out-alt"></i> <span>退出登录</span></a>
@@ -50,7 +49,7 @@
                     <div class="announcement-content">{{ announcement }}</div>
                 </div>
                 {% endif %}
-                
+
                 {% block content %}{% endblock %}
             </div>
         </main>
@@ -79,7 +78,7 @@
             if (span) span.innerText = isDark ? '深色模式' : '浅色模式';
             document.documentElement.setAttribute('data-theme', theme);
             const metaTheme = document.querySelector('meta[name="theme-color"]');
-            if (metaTheme) metaTheme.setAttribute('content', isDark ? '#08111d' : '#f8fafc');
+            if (metaTheme) metaTheme.setAttribute('content', isDark ? '#060c18' : '#f8fafc');
         };
 
         themeToggle.addEventListener('click', () => {
@@ -88,7 +87,7 @@
             localStorage.setItem('nexfile-theme', newTheme);
             updateThemeUI(newTheme);
         });
-        
+
         // Initial UI check
         updateThemeUI(localStorage.getItem('nexfile-theme') || 'dark');
 
@@ -97,13 +96,17 @@
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
             toast.className = `toast toast-${type}`;
-            const icon = type === 'success' ? '<i class="fa-solid fa-circle-check"></i>' : '<i class="fa-solid fa-circle-exclamation"></i>';
+            const icon = type === 'success'
+                ? '<i class="fa-solid fa-circle-check"></i>'
+                : '<i class="fa-solid fa-circle-exclamation"></i>';
             toast.innerHTML = `${icon} <span>${message}</span>`;
             container.appendChild(toast);
-            setTimeout(() => toast.classList.add('show'), 10);
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => toast.classList.add('show'));
+            });
             setTimeout(() => {
                 toast.classList.remove('show');
-                setTimeout(() => toast.remove(), 300);
+                setTimeout(() => toast.remove(), 400);
             }, 3000);
         }
     </script>

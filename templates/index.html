@@ -12,8 +12,8 @@
 <!-- Upload Area -->
 <div class="dropzone glass-panel" id="dropzone" style="margin-bottom: 2rem;">
     <div class="dropzone-inner">
-        <i class="fa-solid fa-cloud-arrow-up" style="font-size: 3rem; color: var(--accent-1); margin-bottom: 1rem;"></i>
-        <h3>拖拽文件至此 或 <span style="color: var(--accent-1); cursor: pointer;">浏览本地文件</span></h3>
+        <i class="fa-solid fa-cloud-arrow-up" style="font-size: 3rem; color: var(--accent); margin-bottom: 1rem;"></i>
+        <h3>拖拽文件至此 或 <span style="color: var(--accent); cursor: pointer;">浏览本地文件</span></h3>
         <p style="color: var(--text-muted);">支持批量上传，单个文件最大 100MB</p>
         <input type="file" id="fileInput" multiple style="display: none;">
     </div>
@@ -22,8 +22,8 @@
             <span id="uploadStatus">准备上传...</span>
             <span id="uploadPercent">0%</span>
         </div>
-        <div style="height: 6px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden;">
-            <div id="uploadProgressBar" style="width: 0%; height: 100%; background: linear-gradient(90deg, var(--accent-1), var(--accent-2)); transition: width 0.3s;"></div>
+        <div style="height: 6px; background: var(--bg-subtle); border-radius: 3px; overflow: hidden;">
+            <div id="uploadProgressBar" style="width: 0%; height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-light)); transition: width 0.3s;"></div>
         </div>
     </div>
 </div>
@@ -69,7 +69,7 @@
                 <td class="actions">
                     <button onclick="analyzeFile('{{ file.name }}')" class="btn btn-sm btn-outline" title="分析"><i class="fa-solid fa-microscope"></i></button>
                     {% if onlyoffice_url and file.name.split('.')[-1].lower() in office_extensions %}
-                        <a href="{{ url_for('onlyoffice_editor', filename=file.name) }}" class="btn btn-sm btn-outline" style="color: var(--accent-1);" title="编辑" target="_blank"><i class="fa-solid fa-pen-to-square"></i></a>
+                        <a href="{{ url_for('onlyoffice_editor', filename=file.name) }}" class="btn btn-sm btn-outline" style="color: var(--accent);" title="编辑" target="_blank"><i class="fa-solid fa-pen-to-square"></i></a>
                     {% endif %}
                     <button onclick='shareItem("file", {{ file.name|tojson }}, this)' class="btn btn-sm btn-outline" title="分享"><i class="fa-solid fa-share-nodes"></i></button>
                     <button onclick="deleteFile('{{ file.name }}')" class="btn btn-sm btn-danger" title="删除"><i class="fa-solid fa-trash-can"></i></button>
@@ -85,7 +85,7 @@
     {% for file in files %}
     <div class="file-card" id="card-{{ file.name }}" data-name="{{ file.name }}">
         <div class="file-card-preview" onclick="analyzeFile('{{ file.name }}')">
-            <i class="{{ file.icon }}" style="font-size: 3.5rem; color: var(--accent-1);"></i>
+            <i class="{{ file.icon }}" style="font-size: 3.5rem; color: var(--accent);"></i>
         </div>
         <div class="file-card-info">
             <div class="file-card-name">{{ file.name }}</div>
@@ -94,7 +94,7 @@
         <div class="file-card-actions">
             <button class="card-action-btn" onclick="analyzeFile('{{ file.name }}')" title="分析"><i class="fa-solid fa-microscope"></i></button>
             {% if onlyoffice_url and file.name.split('.')[-1].lower() in office_extensions %}
-                <a href="{{ url_for('onlyoffice_editor', filename=file.name) }}" class="card-action-btn" style="color: var(--accent-1);" title="编辑" target="_blank"><i class="fa-solid fa-pen-to-square"></i></a>
+                <a href="{{ url_for('onlyoffice_editor', filename=file.name) }}" class="card-action-btn" style="color: var(--accent);" title="编辑" target="_blank"><i class="fa-solid fa-pen-to-square"></i></a>
             {% endif %}
             <button class="card-action-btn" onclick='shareItem("file", {{ file.name|tojson }}, this)' title="分享"><i class="fa-solid fa-share-nodes"></i></button>
             <button class="card-action-btn danger" onclick="deleteFile('{{ file.name }}')" title="删除"><i class="fa-solid fa-trash-can"></i></button>
@@ -107,7 +107,7 @@
 <div class="modal-overlay" id="analysisModal">
     <div class="modal glass-panel">
         <div class="modal-header">
-            <h3><i class="fa-solid fa-chart-pie"></i> 文件分析报告: <span id="targetFileName" style="color: var(--accent-1);"></span></h3>
+            <h3><i class="fa-solid fa-chart-pie"></i> 文件分析报告: <span id="targetFileName" style="color: var(--accent);"></span></h3>
             <button class="close-btn" onclick="closeModal()">&times;</button>
         </div>
         <div id="analysisContent" class="analysis-grid">
@@ -268,7 +268,7 @@
         const title = document.getElementById('targetFileName');
         
         title.innerText = filename;
-        content.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 2rem;"><i class="fa-solid fa-spinner fa-spin" style="font-size: 2rem; color: var(--accent-1);"></i><p style="margin-top: 1rem;">深度分析中精度...</p></div>';
+        content.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 2rem;"><i class="fa-solid fa-spinner fa-spin" style="font-size: 2rem; color: var(--accent);"></i><p style="margin-top: 1rem;">深度分析中精度...</p></div>';
         modal.classList.add('active');
 
         try {

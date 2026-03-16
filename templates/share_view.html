@@ -14,19 +14,19 @@
     <style>
         .markdown-body {
             padding: 1rem 0;
-            color: var(--text-color);
+            color: var(--text-primary);
             line-height: 1.6;
         }
         .markdown-body h1, .markdown-body h2, .markdown-body h3 {
             margin-top: 1.5rem;
             margin-bottom: 1rem;
-            color: var(--accent-1);
+            color: var(--accent);
         }
         .markdown-body p {
             margin-bottom: 1rem;
         }
         .markdown-body a {
-            color: var(--accent-2);
+            color: var(--accent-light);
             text-decoration: none;
         }
         .markdown-body a:hover {
@@ -60,7 +60,7 @@
             margin-bottom: 1rem;
         }
         .markdown-body table th, .markdown-body table td {
-            border: 1px solid var(--card-border);
+            border: 1px solid var(--border-default);
             padding: 0.75rem;
             text-align: left;
         }
@@ -69,7 +69,7 @@
             font-weight: 600;
         }
         .markdown-body blockquote {
-            border-left: 4px solid var(--accent-2);
+            border-left: 4px solid var(--accent-light);
             padding-left: 1rem;
             margin-left: 0;
             color: #94a3b8;
@@ -78,7 +78,7 @@
             border-radius: 0 4px 4px 0;
         }
         .public-badge {
-            background: var(--accent-2);
+            background: var(--accent-light);
             color: white;
             padding: 0.2rem 0.6rem;
             border-radius: 12px;
@@ -96,8 +96,8 @@
         </header>
 
         <div class="glass-panel" style="max-width: 900px; margin: 0 auto;">
-            <h2 style="margin-bottom: 1.5rem; border-bottom: 1px solid var(--card-border); padding-bottom: 1rem;">
-                <i class="fa-brands fa-markdown" style="color: var(--accent-1);"></i> {{ title }} <span class="public-badge">公开分享</span>
+            <h2 style="margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-default); padding-bottom: 1rem;">
+                <i class="fa-brands fa-markdown" style="color: var(--accent);"></i> {{ title }} <span class="public-badge">公开分享</span>
             </h2>
             
             <div class="markdown-body">
