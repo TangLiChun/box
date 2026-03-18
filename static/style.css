@@ -417,6 +417,10 @@ small, .text-muted { color: var(--text-secondary); }
     color: var(--warning);
 }
 
+.status-copy.is-accent {
+    color: var(--accent-light);
+}
+
 .hex-preview-pretty {
     display: none;
     margin-top: 0;
@@ -716,6 +720,10 @@ small, .text-muted { color: var(--text-secondary); }
 
 .hidden-inline {
     display: none;
+}
+
+.hidden-panel {
+    display: none !important;
 }
 
 .min-col-actions {
@@ -2490,6 +2498,10 @@ header h2 {
     text-align: center;
     color: #94a3b8;
     padding: 2rem;
+}
+
+.empty-cell-shell {
+    padding: 0;
 }
 
 .section-head {

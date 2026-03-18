@@ -73,7 +73,7 @@
                     </tr>
                     {% else %}
                     <tr id="trashEmptyRow">
-                        <td colspan="4">
+                        <td colspan="4" class="empty-cell-shell">
                             <div class="empty-state">
                                 <i class="fa-solid fa-trash-can"></i>
                                 <strong>回收站现在是空的</strong>
@@ -102,7 +102,7 @@
             const row = document.createElement('tr');
             row.id = 'trashEmptyRow';
             row.innerHTML = `
-                <td colspan="4">
+                <td colspan="4" class="empty-cell-shell">
                     <div class="empty-state">
                         <i class="fa-solid fa-trash-can"></i>
                         <strong>回收站现在是空的</strong>

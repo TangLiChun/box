@@ -121,7 +121,7 @@
                     </tr>
                     {% else %}
                     <tr id="fileEmptyRow">
-                        <td colspan="4">
+                        <td colspan="4" class="empty-cell-shell">
                             <div class="empty-state">
                                 <i class="fa-solid fa-box-open"></i>
                                 <strong>还没有任何文件</strong>
@@ -154,7 +154,7 @@
                 </div>
             </div>
             {% else %}
-            <div class="empty-state glass-panel empty-grid-span">
+            <div id="gridEmptyState" class="empty-state glass-panel empty-grid-span">
                 <i class="fa-solid fa-box-open"></i>
                 <strong>网格视图里也暂时是空的</strong>
                 <span>上传几份文件之后，这里会很适合快速浏览与挑选。</span>
@@ -178,6 +178,28 @@
 
 {% block scripts %}
 <script>
+    function setButtonLoading(button, loadingText, idleHtml) {
+        if (!button) return () => {};
+        if (!button.dataset.idleHtml) {
+            button.dataset.idleHtml = idleHtml || button.innerHTML;
+        }
+        button.disabled = true;
+        button.classList.add('is-loading');
+        button.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${loadingText}`;
+        return () => {
+            button.disabled = false;
+            button.classList.remove('is-loading');
+            button.innerHTML = button.dataset.idleHtml;
+        };
+    }
+
+    function ensureFileEmptyStates(visibleCount) {
+        const emptyRow = document.getElementById('fileEmptyRow');
+        const gridEmpty = document.getElementById('gridEmptyState');
+        if (emptyRow) emptyRow.classList.toggle('hidden-panel', visibleCount !== 0);
+        if (gridEmpty) gridEmpty.classList.toggle('hidden-panel', visibleCount !== 0);
+    }
+
     function escapeHtml(value) {
         return String(value ?? '')
             .replace(/&/g, '&amp;')
@@ -261,11 +283,12 @@
     function updateVisibleCounts(count) {
         document.getElementById('fileCount').innerText = count;
         if (heroFileCount) heroFileCount.innerText = count;
+        ensureFileEmptyStates(count);
     }
 
     fileSearch.addEventListener('input', (e) => {
         const term = e.target.value.toLowerCase();
-        clearSearch.style.display = term ? 'block' : 'none';
+        clearSearch.classList.toggle('hidden-inline', !term);
         
         // Filter Table
         let visibleCount = 0;
@@ -316,8 +339,11 @@
         const progressBar = document.getElementById('uploadProgressBar');
         const status = document.getElementById('uploadStatus');
         const percent = document.getElementById('uploadPercent');
+        const failedFiles = [];
         
         container.style.display = 'block';
+        progressBar.style.width = '0%';
+        percent.innerText = '0%';
         
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
@@ -346,12 +372,23 @@
                 xhr.send(formData);
                 await promise;
             } catch (err) {
+                failedFiles.push(file.name);
                 showToast(`上传失败: ${file.name}`, 'error');
             }
         }
-        
-        showToast("所有文件上传完成", 'success');
-        setTimeout(() => location.reload(), 1000);
+
+        if (failedFiles.length === 0) {
+            status.innerText = `上传完成，共 ${files.length} 个文件`;
+            percent.innerText = '100%';
+            progressBar.style.width = '100%';
+            showToast("所有文件上传完成", 'success');
+            setTimeout(() => location.reload(), 1000);
+            return;
+        }
+
+        const successCount = files.length - failedFiles.length;
+        status.innerText = `上传结束，成功 ${successCount} 个，失败 ${failedFiles.length} 个`;
+        showToast(`上传完成，但有 ${failedFiles.length} 个文件失败`, 'error');
     }
 
     // Analysis Logic
@@ -460,6 +497,7 @@
     }
     
     async function shareItem(type, filename, btn) {
+        const restoreButton = setButtonLoading(btn, '生成中', btn.innerHTML);
         try {
             const response = await fetch('/share/create', { 
                 method: 'POST',
@@ -475,6 +513,8 @@
             }
         } catch(e) {
              showToast("网络请求错误", 'error');
+        } finally {
+            restoreButton();
         }
     }
     

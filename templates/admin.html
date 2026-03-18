@@ -219,6 +219,21 @@
 
 {% block scripts %}
 <script>
+    function setButtonLoading(button, loadingText, idleHtml) {
+        if (!button) return () => {};
+        if (!button.dataset.idleHtml) {
+            button.dataset.idleHtml = idleHtml || button.innerHTML;
+        }
+        button.disabled = true;
+        button.classList.add('is-loading');
+        button.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${loadingText}`;
+        return () => {
+            button.disabled = false;
+            button.classList.remove('is-loading');
+            button.innerHTML = button.dataset.idleHtml;
+        };
+    }
+
     // Add User
     document.getElementById('addUserForm').addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -312,8 +327,7 @@
     async function testOnlyofficeConnection() {
         const btn = document.getElementById('testOOBtn');
         const result = document.getElementById('testOOResult');
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 测试中';
+        const restoreButton = setButtonLoading(btn, '测试中');
         result.textContent = '';
         result.className = 'muted-note status-copy';
         try {
@@ -325,8 +339,7 @@
             result.textContent = '网络请求失败';
             result.classList.add('is-danger');
         } finally {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fa-solid fa-plug-circle-check"></i> 测试连接';
+            restoreButton();
         }
     }
 
@@ -354,7 +367,7 @@
         if (!data.supported) {
             statusText.classList.add('is-warning');
         } else if (data.has_updates && !data.dirty) {
-            statusText.classList.add('btn-accent');
+            statusText.classList.add('is-accent');
         }
 
         const cards = [];
@@ -386,8 +399,7 @@
 
     async function checkForUpdates() {
         const checkBtn = document.getElementById('checkUpdateBtn');
-        checkBtn.disabled = true;
-        checkBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 检查中';
+        const restoreButton = setButtonLoading(checkBtn, '检查中');
         try {
             const response = await fetch('/admin/update/status');
             const result = await response.json().catch(() => null);
@@ -398,8 +410,7 @@
         } catch (e) {
             showToast(`检查更新失败: ${e.message || '未知错误'}`, 'error');
         } finally {
-            checkBtn.disabled = false;
-            checkBtn.innerHTML = '<i class="fa-solid fa-rotate"></i> 检查更新';
+            restoreButton();
         }
     }
 
@@ -425,8 +436,7 @@
         }
 
         const applyBtn = document.getElementById('applyUpdateBtn');
-        applyBtn.disabled = true;
-        applyBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 升级中';
+        const restoreButton = setButtonLoading(applyBtn, '升级中');
 
         try {
             const response = await fetch('/admin/update/apply', { method: 'POST' });
@@ -439,7 +449,7 @@
         } catch (e) {
             showToast(`执行升级失败: ${e.message || '未知错误'}`, 'error');
         } finally {
-            applyBtn.innerHTML = '<i class="fa-solid fa-cloud-arrow-down"></i> 执行升级';
+            restoreButton();
             if (latestUpdateStatus) {
                 applyBtn.disabled = !(latestUpdateStatus.supported && latestUpdateStatus.has_updates && !latestUpdateStatus.dirty);
             }
