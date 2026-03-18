@@ -714,6 +714,62 @@ small, .text-muted { color: var(--text-secondary); }
     cursor: pointer;
 }
 
+.sidebar-user-chip {
+    margin-bottom: 0.75rem;
+    font-size: 0.82rem;
+    padding-left: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.side-link-danger {
+    color: var(--danger);
+}
+
+.top-utility-chip {
+    margin-bottom: 1rem;
+}
+
+.text-nowrap {
+    white-space: nowrap;
+}
+
+.note-file-icon {
+    color: var(--accent);
+    margin-right: 0.75rem;
+}
+
+.trash-file-icon {
+    color: var(--text-muted);
+    margin-right: 0.75rem;
+}
+
+.btn-success-accent {
+    color: var(--success);
+}
+
+.page-wrap {
+    padding: 2rem 1.25rem 3rem;
+}
+
+.page-shell-narrow {
+    max-width: 960px;
+    margin: 0 auto;
+}
+
+.public-markdown-icon {
+    color: var(--accent-light);
+}
+
+.status-dot-live {
+    color: var(--success);
+}
+
+.status-dot-live.is-dirty {
+    color: var(--warning);
+}
+
 /* ─── Sidebar ───────────────────────────────────────── */
 
 .sidebar {

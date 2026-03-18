@@ -52,14 +52,14 @@
                         <th>文件名</th>
                         <th>原始位置 / 类型</th>
                         <th>删除时间</th>
-                        <th style="min-width: 150px;">操作</th>
+                        <th class="min-col-actions">操作</th>
                     </tr>
                 </thead>
                 <tbody id="trashTableBody">
                     {% for item in items %}
                     <tr id="row-{{ item.filename }}">
                         <td>
-                            <i class="fa-solid {{ 'fa-file' if item.type == 'file' else 'fa-book' }}" style="color: var(--text-muted); margin-right: 0.75rem;"></i>
+                            <i class="fa-solid {{ 'fa-file' if item.type == 'file' else 'fa-book' }} trash-file-icon"></i>
                             {{ item.original_name }}
                         </td>
                         <td class="muted-note-sm">
@@ -67,7 +67,7 @@
                         </td>
                         <td>{{ item.deleted_at }}</td>
                         <td class="actions">
-                            <button onclick="restoreItem('{{ item.filename }}')" class="btn btn-sm btn-outline" style="color: var(--success);" title="还原"><i class="fa-solid fa-rotate-left"></i> 还原</button>
+                            <button onclick="restoreItem('{{ item.filename }}')" class="btn btn-sm btn-outline btn-success-accent" title="还原"><i class="fa-solid fa-rotate-left"></i> 还原</button>
                             <button onclick="permDelete('{{ item.filename }}')" class="btn btn-sm btn-danger" title="彻底删除"><i class="fa-solid fa-xmark"></i></button>
                         </td>
                     </tr>

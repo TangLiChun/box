@@ -38,16 +38,16 @@
                 <button id="themeToggle" class="theme-toggle-btn">
                     <i class="fa-solid fa-moon"></i> <span>深色模式</span>
                 </button>
-                <div class="muted-note" style="margin-bottom: 0.75rem; font-size: 0.82rem; padding-left: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                <div class="muted-note sidebar-user-chip">
                     <i class="fa-solid fa-circle-user"></i> <span>{{ current_user }}</span>
                 </div>
-                <a href="{{ url_for('main.logout') }}" class="side-link" style="color: var(--danger);"><i class="fa-solid fa-sign-out-alt"></i> <span>退出登录</span></a>
+                <a href="{{ url_for('main.logout') }}" class="side-link side-link-danger"><i class="fa-solid fa-sign-out-alt"></i> <span>退出登录</span></a>
             </div>
         </aside>
 
         <main class="main-content">
             <div class="container">
-                <div class="utility-pill btn-auto" style="margin-bottom: 1rem;">
+                <div class="utility-pill btn-auto top-utility-chip">
                     <i class="fa-solid fa-sparkles"></i>
                     <span>更清晰的层次，更顺手的操作流</span>
                 </div>

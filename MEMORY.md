@@ -137,10 +137,13 @@ It is now roughly:
 - mobile navigation now uses a toggle + backdrop pattern instead of relying only on a collapsed desktop sidebar
 - toast behavior and mobile layout responsiveness were improved
 - keyboard focus visibility was strengthened with `:focus-visible` styling for interactive controls
+- recent frontend cleanup also moved more page-specific inline styles out of templates and into shared CSS utilities
+- admin update status, wheel interactions, file analysis modal, and several shared layout chips/buttons now use more structured UI classes instead of one-off inline styling
+- file workspace analysis rendering now uses safer escaped HTML assembly for dynamic state blocks and hash/hex display
 
 Current frontend reality:
-- the product now feels much more cohesive, but there are still many inline styles inside templates that could be extracted into reusable classes over time
-- visual polish is now strongest on the primary flows; future refinement can focus on reducing inline styling and improving animation consistency
+- the product now feels much more cohesive, and many of the most obvious inline template styles have already been extracted into reusable classes
+- visual polish is strongest on the primary flows, and current frontend work is shifting from broad redesign to cleanup, consistency, and maintainability
 
 ## Git / Repo Status
 
@@ -186,10 +189,10 @@ Current frontend reality:
    `test_security_and_trash.py` is still carrying multiple concerns and would benefit from a shared factory-first base plus smaller focused test modules.
 
 5. Extract repeated inline template styles
-   A lot of visual polish now exists, but many templates still carry inline `style="..."` fragments that should gradually move into named CSS classes for maintainability.
+   Most high-traffic pages have been cleaned up, but some templates still carry inline `style="..."` fragments and page-local `<style>` blocks that should gradually move into named CSS classes for maintainability.
 
 6. Continue frontend micro-polish
-   Good next candidates are animation consistency, ONLYOFFICE/editor edge-case states, and reducing one-off component styling across templates.
+   Good next candidates are animation consistency, ONLYOFFICE/editor edge-case states, and reducing remaining one-off component styling across templates.
 
 ## Things To Be Careful About
 

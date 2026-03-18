@@ -12,7 +12,7 @@
                 <p class="page-subtitle">把搜索、新建、查看、编辑和分享整理到更聚焦的布局里。你能更快找到想改的内容，也更容易把一条笔记发给别人。</p>
             </div>
             <div class="hero-actions">
-                <a href="{{ url_for('main.create_note') }}" class="btn btn-primary btn-auto" style="white-space: nowrap;"><i class="fa-solid fa-plus"></i> 新建笔记</a>
+                <a href="{{ url_for('main.create_note') }}" class="btn btn-primary btn-auto text-nowrap"><i class="fa-solid fa-plus"></i> 新建笔记</a>
                 <button type="button" class="btn btn-ghost btn-auto" onclick="document.getElementById('noteSearch').focus()"><i class="fa-solid fa-magnifying-glass"></i> 搜索笔记</button>
             </div>
         </div>
@@ -40,7 +40,7 @@
             <div class="search-container">
                 <i class="fa-solid fa-search search-icon"></i>
                 <input type="text" id="noteSearch" class="search-input" placeholder="搜索笔记标题...">
-                <button id="clearSearch" class="clear-search-btn" style="display: none;"><i class="fa-solid fa-xmark"></i></button>
+                <button id="clearSearch" class="clear-search-btn hidden-inline"><i class="fa-solid fa-xmark"></i></button>
             </div>
         </div>
         <div class="toolbar-cluster">
@@ -63,16 +63,16 @@
             <table>
                 <thead>
                     <tr>
-                        <th onclick="sortTable(0)" style="cursor: pointer;" title="点击排序"><i class="fa-solid fa-sort"></i> 笔记标题</th>
-                        <th onclick="sortTable(1)" style="cursor: pointer;" title="点击排序"><i class="fa-solid fa-sort"></i> 最后修改</th>
-                        <th style="min-width: 200px;">操作</th>
+                        <th onclick="sortTable(0)" class="sort-trigger" title="点击排序"><i class="fa-solid fa-sort"></i> 笔记标题</th>
+                        <th onclick="sortTable(1)" class="sort-trigger" title="点击排序"><i class="fa-solid fa-sort"></i> 最后修改</th>
+                        <th class="min-col-actions">操作</th>
                     </tr>
                 </thead>
                 <tbody id="noteTableBody">
                     {% for note in notes %}
                     <tr id="row-{{ note.filename }}">
                         <td class="note-title-cell">
-                            <i class="fa-brands fa-markdown" style="color: var(--accent); margin-right: 0.75rem;"></i>
+                            <i class="fa-brands fa-markdown note-file-icon"></i>
                             <a href="{{ url_for('main.view_note', filename=note.filename) }}" class="note-link">{{ note.title }}</a>
                             {% if note.share_id %}
                                 <button onclick='copyShareLink({{ note.share_id|tojson }}, "note")' class="share-badge" title="复制链接"><i class="fa-solid fa-link"></i> 已分享</button>
@@ -81,7 +81,7 @@
                         <td>{{ note.modified }}</td>
                         <td class="actions">
                             <a href="{{ url_for('main.view_note', filename=note.filename) }}" class="btn btn-sm btn-outline" title="查看"><i class="fa-solid fa-eye"></i></a>
-                            <a href="{{ url_for('main.edit_note', filename=note.filename) }}" class="btn btn-sm btn-outline" style="color: var(--accent);" title="编辑"><i class="fa-solid fa-pen"></i></a>
+                            <a href="{{ url_for('main.edit_note', filename=note.filename) }}" class="btn btn-sm btn-outline btn-accent" title="编辑"><i class="fa-solid fa-pen"></i></a>
                             <button data-filename="{{ note.filename }}" onclick='shareItem("note", {{ note.filename|tojson }}, this)' class="btn btn-sm btn-outline" title="分享"><i class="fa-solid fa-share-nodes"></i></button>
                             <button data-filename="{{ note.filename }}" onclick="deleteNote(this)" class="btn btn-sm btn-danger" title="删除"><i class="fa-solid fa-trash"></i></button>
                         </td>
@@ -126,7 +126,7 @@
             const rows = Array.from(noteTableBody.querySelectorAll('tr:not(#emptyRow)'));
             let visibleCount = 0;
             
-            if (clearSearch) clearSearch.style.display = term ? 'block' : 'none';
+            if (clearSearch) clearSearch.classList.toggle('hidden-inline', !term);
 
             rows.forEach(row => {
                 const titleText = row.querySelector('.note-link').innerText.toLowerCase();

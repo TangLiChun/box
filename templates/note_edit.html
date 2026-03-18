@@ -117,7 +117,7 @@
         </div>
         <div class="editor-meta-bar">
             <span class="utility-pill"><i class="fa-solid fa-keyboard"></i> 支持 `Ctrl/Cmd + S` 快速保存</span>
-            <span class="utility-pill"><i class="fa-solid fa-circle status-dot-sm" id="save-status" style="color: var(--success);"></i> <span id="dirty-msg" class="opacity-hidden">内容未保存</span><span id="save-clean-msg">当前已保存</span></span>
+            <span class="utility-pill"><i class="fa-solid fa-circle status-dot-sm status-dot-live" id="save-status"></i> <span id="dirty-msg" class="opacity-hidden">内容未保存</span><span id="save-clean-msg">当前已保存</span></span>
             <span class="utility-pill"><i class="fa-brands fa-markdown"></i> Markdown 即时预览</span>
         </div>
     </section>
@@ -198,7 +198,7 @@
 
     function setDirty(dirty) {
         isDirty = dirty;
-        saveStatus.style.color = dirty ? 'var(--warning)' : 'var(--success)';
+        saveStatus.classList.toggle('is-dirty', dirty);
         dirtyMsg.style.opacity = dirty ? '1' : '0';
         if (saveCleanMsg) saveCleanMsg.style.display = dirty ? 'none' : 'inline';
     }
