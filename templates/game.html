@@ -200,12 +200,12 @@
             </div>
             <div class="hero-actions">
                 {% if not is_public %}
-                <button id="shareGameBtn" class="btn btn-primary" style="width: auto;"><i class="fa-solid fa-share-nodes"></i> 分享转盘</button>
+                <button id="shareGameBtn" class="btn btn-primary btn-auto"><i class="fa-solid fa-share-nodes"></i> 分享转盘</button>
                 {% endif %}
-                <button type="button" class="btn btn-ghost" style="width: auto;" onclick="document.getElementById('spinBtn').click()"><i class="fa-solid fa-bolt"></i> 立即开转</button>
+                <button type="button" class="btn btn-ghost btn-auto" onclick="document.getElementById('spinBtn').click()"><i class="fa-solid fa-bolt"></i> 立即开转</button>
             </div>
         </div>
-        <div class="stat-grid" style="margin-top: 1.5rem;">
+        <div class="stat-grid stat-grid-top">
             <div class="stat-card">
                 <div class="stat-label">当前模式</div>
                 <div class="stat-value">{% if is_public %}公开访问{% else %}编辑模式{% endif %}</div>
@@ -239,7 +239,7 @@
             <div class="options-section">
                 <div class="section-head" style="margin-bottom: 1rem;">
                     <div class="section-title">
-                        <i class="fa-solid fa-list-check" style="color: var(--accent-light);"></i>
+                        <i class="fa-solid fa-list-check section-icon-accent"></i>
                         <div>
                             <h2>转盘选项</h2>
                             <div class="section-kicker">支持单条编辑，也支持批量粘贴快速重建整套选项。</div>
@@ -257,15 +257,15 @@
                     </div>
                 </div>
                 <div class="options-actions">
-                    <button id="batchToggleBtn" class="btn" style="background: var(--accent-soft); color: #3aa9ff; width: auto;"><i class="fa-solid fa-layer-group"></i> 批量添加</button>
-                    <button id="resetOptionsBtn" class="btn" style="background: rgba(255, 255, 255, 0.04); width: auto;"><i class="fa-solid fa-rotate-left"></i> 重置</button>
+                    <button id="batchToggleBtn" class="btn btn-auto" style="background: var(--accent-soft); color: #3aa9ff;"><i class="fa-solid fa-layer-group"></i> 批量添加</button>
+                    <button id="resetOptionsBtn" class="btn btn-auto" style="background: rgba(255, 255, 255, 0.04);"><i class="fa-solid fa-rotate-left"></i> 重置</button>
                 </div>
             </div>
             {% endif %}
         </div>
 
         {% if shared_data %}
-        <div style="text-align: center; color: var(--text-muted); margin-top: 1rem;">
+        <div class="muted-note" style="text-align: center; margin-top: 1rem;">
             <i class="fa-solid fa-info-circle"></i> 正在访问共享的转盘
         </div>
         {% endif %}

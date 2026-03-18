@@ -12,15 +12,15 @@
             <p class="page-subtitle">把账户、系统设置和增量更新整理成更清晰的区块，让你一眼知道当前状态，操作时也更安心。</p>
         </div>
         <div class="hero-actions">
-            <button type="button" class="btn btn-primary" style="width: auto;" onclick="document.getElementById('settingsForm').scrollIntoView({ behavior: 'smooth', block: 'start' })">
+            <button type="button" class="btn btn-primary btn-auto" onclick="document.getElementById('settingsForm').scrollIntoView({ behavior: 'smooth', block: 'start' })">
                 <i class="fa-solid fa-gear"></i> 前往系统设置
             </button>
-            <button type="button" class="btn btn-ghost" style="width: auto;" onclick="checkForUpdates()">
+            <button type="button" class="btn btn-ghost btn-auto" onclick="checkForUpdates()">
                 <i class="fa-solid fa-rotate"></i> 检查更新
             </button>
         </div>
     </div>
-    <div class="stat-grid" style="margin-top: 1.5rem;">
+    <div class="stat-grid stat-grid-top">
         <div class="stat-card">
             <div class="stat-label">用户数量</div>
             <div class="stat-value">{{ users|length }}</div>
@@ -45,23 +45,23 @@
     <p style="margin: 0.75rem 0 1rem; color: #fecdd3; line-height: 1.8;">
         当前 <code>admin</code> 账号仍处于初始化密码状态。为了降低泄露风险，请立即为当前管理员设置一个新的专用密码。
     </p>
-    <button type="button" class="btn btn-danger" style="width: auto;" onclick='openPasswordModalForCurrentAdmin()'>
+    <button type="button" class="btn btn-danger btn-auto" onclick='openPasswordModalForCurrentAdmin()'>
         <i class="fa-solid fa-key"></i> 立即修改管理员密码
     </button>
 </div>
 {% endif %}
 
 <section class="glass-panel">
-    <div class="section-head">
+        <div class="section-head">
         <div class="section-title">
-            <i class="fa-solid fa-user-plus" style="color: var(--accent-light);"></i>
+            <i class="fa-solid fa-user-plus section-icon-accent"></i>
             <div>
                 <h2>添加新用户</h2>
                 <div class="section-kicker">快速创建账号，减少重复输入和跳转。</div>
             </div>
         </div>
     </div>
-    <form id="addUserForm" style="display: flex; gap: 1rem; align-items: flex-end;">
+    <form id="addUserForm" class="inline-actions" style="align-items: flex-end;">
         <div class="form-group" style="margin-bottom: 0; flex: 1;">
             <label>用户名</label>
             <input type="text" name="username" required placeholder="输入新用户名">
@@ -70,14 +70,14 @@
             <label>密码</label>
             <input type="password" name="password" required placeholder="输入密码">
         </div>
-        <button type="submit" class="btn btn-primary" style="width: auto;">添加用户</button>
+        <button type="submit" class="btn btn-primary btn-auto">添加用户</button>
     </form>
 </section>
 
 <section class="glass-panel">
     <div class="section-head">
         <div class="section-title">
-            <i class="fa-solid fa-gear" style="color: var(--accent-light);"></i>
+            <i class="fa-solid fa-gear section-icon-accent"></i>
             <div>
                 <h2>系统设置</h2>
                 <div class="section-kicker">把文档服务、回调地址和公告集中在一个更易读的面板里。</div>
@@ -88,7 +88,7 @@
         <div class="form-group">
             <label>ONLYOFFICE Document Server 地址</label>
             <input type="text" name="onlyoffice_url" value="{{ onlyoffice_url }}" placeholder="例如: http://192.168.1.100:8080">
-            <small style="color: #94a3b8; display: block; margin-top: 0.5rem;">
+            <small class="helper-copy">
                 <i class="fa-solid fa-circle-info"></i> 填写地址后将启用 Office 文档（docx, xlsx, pptx）在线编辑功能。留空则禁用。
             </small>
         </div>
@@ -101,28 +101,28 @@
                 placeholder="填写与 Document Server 保持一致的 JWT 密钥"
                 autocomplete="new-password"
             >
-            <small style="color: #94a3b8; display: block; margin-top: 0.5rem;">
+            <small class="helper-copy">
                 <i class="fa-solid fa-lock"></i> 如果你的 ONLYOFFICE 开启了 JWT 安全校验，请把相同的密钥填在这里。留空则不附加 JWT 签名。
             </small>
         </div>
         <div class="form-group">
             <label>回调地址（可选，解决保存失败）</label>
             <input type="text" name="onlyoffice_callback_base" value="{{ onlyoffice_callback_base }}" placeholder="例如: http://192.168.1.50:5000">
-            <small style="color: #94a3b8; display: block; margin-top: 0.5rem;">
+            <small class="helper-copy">
                 <i class="fa-solid fa-circle-info"></i> 如果 ONLYOFFICE 服务器无法通过浏览器地址回连本应用（例如 Docker/NAT 环境），请填写 ONLYOFFICE 能访问到本应用的地址。留空则自动使用浏览器地址。
             </small>
         </div>
         <div class="form-group">
             <label>全局公告（置顶显示）</label>
             <textarea name="announcement" rows="3" placeholder="在此输入公告内容，留空则隐藏。" style="width: 100%; padding: 0.75rem 1rem; background: var(--bg-input); border: 1px solid var(--border-default); border-radius: var(--radius-md); color: var(--text-color); font-size: 1rem; outline: none; transition: all 0.3s ease;">{{ announcement }}</textarea>
-            <small style="color: #94a3b8; display: block; margin-top: 0.5rem;">
+            <small class="helper-copy">
                 <i class="fa-solid fa-bullhorn"></i> 公告将显示在文件管理和笔记管理的顶部。
             </small>
         </div>
-        <div style="display: flex; gap: 0.75rem; align-items: center;">
-            <button type="submit" class="btn btn-primary" style="width: auto;">保存设置</button>
-            <button type="button" id="testOOBtn" class="btn btn-outline" style="width: auto; color: var(--accent-light);" onclick="testOnlyofficeConnection()"><i class="fa-solid fa-plug-circle-check"></i> 测试连接</button>
-            <span id="testOOResult" style="font-size: 0.9rem; color: #94a3b8;"></span>
+        <div class="inline-actions">
+            <button type="submit" class="btn btn-primary btn-auto">保存设置</button>
+            <button type="button" id="testOOBtn" class="btn btn-outline btn-auto" style="color: var(--accent-light);" onclick="testOnlyofficeConnection()"><i class="fa-solid fa-plug-circle-check"></i> 测试连接</button>
+            <span id="testOOResult" class="muted-note" style="font-size: 0.9rem;"></span>
         </div>
     </form>
 </section>
@@ -130,35 +130,35 @@
 <section class="glass-panel">
     <div class="section-head">
         <div class="section-title">
-            <i class="fa-solid fa-arrows-rotate" style="color: var(--accent-light);"></i>
+            <i class="fa-solid fa-arrows-rotate section-icon-accent"></i>
             <div>
                 <h2>增量更新</h2>
                 <div class="section-kicker">在 Git 部署下检查远端状态，并给出更具体的升级反馈。</div>
             </div>
         </div>
     </div>
-    <p style="margin-top: 0; color: #94a3b8; line-height: 1.7;">
+    <p class="muted-note-line">
         这个入口只支持 Git 部署下的增量升级。系统会检查远端提交，确认可升级后执行
         <code>git pull --ff-only</code>，并尝试同步安装 <code>requirements.txt</code> 里的依赖。
         如果当前目录不是 Git 仓库，或者存在本地未提交修改，升级按钮会自动禁用。
     </p>
-    <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; margin-bottom: 1rem;">
-        <button type="button" id="checkUpdateBtn" class="btn btn-outline" style="width: auto; color: var(--accent-light);">
+    <div class="status-row">
+        <button type="button" id="checkUpdateBtn" class="btn btn-outline btn-auto" style="color: var(--accent-light);">
             <i class="fa-solid fa-rotate"></i> 检查更新
         </button>
-        <button type="button" id="applyUpdateBtn" class="btn btn-primary" style="width: auto;" disabled>
+        <button type="button" id="applyUpdateBtn" class="btn btn-primary btn-auto" disabled>
             <i class="fa-solid fa-cloud-arrow-down"></i> 执行升级
         </button>
-        <span id="updateStatusText" style="color: #94a3b8; font-size: 0.95rem;">尚未检查更新</span>
+        <span id="updateStatusText" class="muted-note" style="font-size: 0.95rem;">尚未检查更新</span>
     </div>
-    <div id="updateMeta" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem; margin-bottom: 1rem;"></div>
+    <div id="updateMeta" class="meta-grid"></div>
     <pre id="updateOutput" class="hex-preview" style="display: none; margin-top: 0; white-space: pre-wrap; word-break: break-word;"></pre>
 </section>
 
 <section class="glass-panel">
     <div class="section-head">
         <div class="section-title">
-            <i class="fa-solid fa-users" style="color: var(--accent-light);"></i>
+            <i class="fa-solid fa-users section-icon-accent"></i>
             <div>
                 <h2>用户列表</h2>
                 <div class="section-kicker">直接进行密码修改与用户清理，不需要跳离当前页面。</div>
@@ -358,9 +358,9 @@
         cards.push({ label: '待更新提交', value: data.has_updates ? String(data.behind || 0) : '0' });
 
         meta.innerHTML = cards.map(card => `
-            <div style="padding: 0.85rem 1rem; border-radius: 12px; background: var(--bg-subtle); border: 1px solid var(--border-default);">
-                <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.35rem;">${escapeHtml(card.label)}</div>
-                <div style="color: var(--text-main); word-break: break-all;">${escapeHtml(card.value)}</div>
+            <div class="meta-card">
+                <div class="meta-card-label">${escapeHtml(card.label)}</div>
+                <div class="meta-card-value">${escapeHtml(card.value)}</div>
             </div>
         `).join('');
 

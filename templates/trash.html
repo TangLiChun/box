@@ -12,10 +12,10 @@
                 <p class="page-subtitle">你可以先把误删内容找回来，再决定是否彻底清理。操作顺序和状态信息都尽量做得更直白，减少误操作压力。</p>
             </div>
             <div class="hero-actions">
-                <button onclick="clearTrash()" class="btn btn-danger" style="width: auto;"><i class="fa-solid fa-fire"></i> 清空回收站</button>
+                <button onclick="clearTrash()" class="btn btn-danger btn-auto"><i class="fa-solid fa-fire"></i> 清空回收站</button>
             </div>
         </div>
-        <div class="stat-grid" style="margin-top: 1.5rem;">
+        <div class="stat-grid stat-grid-top">
             <div class="stat-card">
                 <div class="stat-label">待处理条目</div>
                 <div class="stat-value" id="trashHeroCount">{{ items|length }}</div>
@@ -34,10 +34,10 @@
         </div>
     </section>
 
-    <section class="glass-panel surface-card" style="padding: 0;">
-        <div class="section-head" style="padding: 1.2rem 1.2rem 0;">
+    <section class="glass-panel surface-card surface-card-flush">
+        <div class="section-head section-head-padded">
             <div class="section-title">
-                <i class="fa-solid fa-clock-rotate-left" style="color: var(--accent-light);"></i>
+                <i class="fa-solid fa-clock-rotate-left section-icon-accent"></i>
                 <div>
                     <h2>待恢复项目</h2>
                     <div class="section-kicker">先判断是否要恢复，再决定是否彻底清理。</div>
@@ -62,7 +62,7 @@
                             <i class="fa-solid {{ 'fa-file' if item.type == 'file' else 'fa-book' }}" style="color: var(--text-muted); margin-right: 0.75rem;"></i>
                             {{ item.original_name }}
                         </td>
-                        <td style="color: var(--text-muted); font-size: 0.85rem;">
+                        <td class="muted-note-sm">
                             {{ '文件' if item.type == 'file' else '笔记' }}
                         </td>
                         <td>{{ item.deleted_at }}</td>
