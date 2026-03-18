@@ -234,6 +234,40 @@
         };
     }
 
+    function ensureAnnouncementBanner(content) {
+        const trimmed = (content || '').trim();
+        let banner = document.getElementById('announcementBanner');
+        let bannerContent = document.getElementById('announcementContent');
+        const container = document.querySelector('.main-content .container');
+        if (!container) return;
+
+        if (!trimmed) {
+            banner?.remove();
+            return;
+        }
+
+        if (!banner) {
+            const utilityChip = container.querySelector('.top-utility-chip');
+            banner = document.createElement('div');
+            banner.id = 'announcementBanner';
+            banner.className = 'announcement-banner';
+            banner.innerHTML = `
+                <i class="fa-solid fa-bullhorn"></i>
+                <div class="announcement-content" id="announcementContent"></div>
+            `;
+            if (utilityChip && utilityChip.nextSibling) {
+                container.insertBefore(banner, utilityChip.nextSibling);
+            } else {
+                container.appendChild(banner);
+            }
+            bannerContent = banner.querySelector('#announcementContent');
+        }
+
+        if (bannerContent) {
+            bannerContent.textContent = trimmed;
+        }
+    }
+
     function updateUserCount(delta = 0) {
         const statValue = document.querySelector('.stat-card .stat-value');
         if (!statValue) return;
@@ -343,17 +377,20 @@
     document.getElementById('settingsForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const formData = new FormData(e.target);
+        const restoreButton = setButtonLoading(e.target.querySelector('button[type="submit"]'), '保存中');
         try {
             const response = await fetch('/admin/settings', { method: 'POST', body: formData });
             const result = await response.json();
             if(result.success) {
                 showToast(result.message, 'success');
-                setTimeout(() => location.reload(), 1000); // Reload to update announcement if changed
+                ensureAnnouncementBanner(result.settings?.announcement || '');
             } else {
                 showToast(result.message, 'error');
             }
         } catch(e) {
             showToast("网络请求错误", 'error');
+        } finally {
+            restoreButton();
         }
     });
 

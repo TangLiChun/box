@@ -91,6 +91,21 @@
 
 {% block scripts %}
 <script>
+    function setButtonLoading(button, loadingText, idleHtml) {
+        if (!button) return () => {};
+        if (!button.dataset.idleHtml) {
+            button.dataset.idleHtml = idleHtml || button.innerHTML;
+        }
+        button.disabled = true;
+        button.classList.add('is-loading');
+        button.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${loadingText}`;
+        return () => {
+            button.disabled = false;
+            button.classList.remove('is-loading');
+            button.innerHTML = button.dataset.idleHtml;
+        };
+    }
+
     function updateTrashCount() {
         const rows = document.querySelectorAll('#trashTableBody tr[id^="row-"]');
         const count = rows.length;
@@ -149,17 +164,23 @@
 
     async function clearTrash() {
         if(!confirm("确定要清空回收站中所有文件和笔记吗？该操作不可撤销。")) return;
+        const triggerButton = document.querySelector('.hero-actions .btn-danger');
+        const restoreButton = setButtonLoading(triggerButton, '清空中');
         try {
             const response = await fetch('/trash/clear', { method: 'POST' });
             const result = await response.json();
             if(result.success) {
                 showToast(result.message, 'success');
-                setTimeout(() => location.reload(), 1000);
+                document.querySelectorAll('#trashTableBody tr[id^="row-"]').forEach((row) => row.remove());
+                document.getElementById('trashEmptyRow')?.remove();
+                updateTrashCount();
             } else {
                 showToast(result.message, 'error');
             }
         } catch (err) {
             showToast("清空失败", 'error');
+        } finally {
+            restoreButton();
         }
     }
 </script>

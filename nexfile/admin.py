@@ -24,6 +24,7 @@ def handle_update_settings(set_setting):
     onlyoffice_url = request.form.get('onlyoffice_url', '').strip()
     onlyoffice_jwt_secret = request.form.get('onlyoffice_jwt_secret', '').strip()
     onlyoffice_callback_base = request.form.get('onlyoffice_callback_base', '').strip()
+    announcement = request.form.get('announcement', '').strip()
 
     if onlyoffice_url and not onlyoffice_url.startswith(('http://', 'https://')):
         return jsonify({'success': False, 'message': '请输入有效的 URL (以 http:// 或 https:// 开头)'})
@@ -33,7 +34,16 @@ def handle_update_settings(set_setting):
     set_setting('onlyoffice_url', onlyoffice_url)
     set_setting('onlyoffice_jwt_secret', onlyoffice_jwt_secret)
     set_setting('onlyoffice_callback_base', onlyoffice_callback_base)
-    return jsonify({'success': True, 'message': '设置已更新'})
+    set_setting('announcement', announcement)
+    return jsonify({
+        'success': True,
+        'message': '设置已更新',
+        'settings': {
+            'onlyoffice_url': onlyoffice_url,
+            'onlyoffice_callback_base': onlyoffice_callback_base,
+            'announcement': announcement,
+        },
+    })
 
 
 def handle_test_onlyoffice_connection(get_setting):
