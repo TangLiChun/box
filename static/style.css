@@ -204,17 +204,17 @@ small, .text-muted { color: var(--text-secondary); }
     gap: 1.5rem;
 }
 
-.page-shell > * {
+.page-shell > :not(.modal-overlay) {
     opacity: 0;
     animation: surfaceReveal var(--duration-xl) var(--ease-out) forwards;
 }
 
-.page-shell > *:nth-child(1) { animation-delay: 0.02s; }
-.page-shell > *:nth-child(2) { animation-delay: 0.08s; }
-.page-shell > *:nth-child(3) { animation-delay: 0.14s; }
-.page-shell > *:nth-child(4) { animation-delay: 0.2s; }
-.page-shell > *:nth-child(5) { animation-delay: 0.26s; }
-.page-shell > *:nth-child(6) { animation-delay: 0.32s; }
+.page-shell > :not(.modal-overlay):nth-child(1) { animation-delay: 0.02s; }
+.page-shell > :not(.modal-overlay):nth-child(2) { animation-delay: 0.08s; }
+.page-shell > :not(.modal-overlay):nth-child(3) { animation-delay: 0.14s; }
+.page-shell > :not(.modal-overlay):nth-child(4) { animation-delay: 0.2s; }
+.page-shell > :not(.modal-overlay):nth-child(5) { animation-delay: 0.26s; }
+.page-shell > :not(.modal-overlay):nth-child(6) { animation-delay: 0.32s; }
 
 .page-hero {
     position: relative;
