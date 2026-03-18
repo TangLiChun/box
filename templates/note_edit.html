@@ -111,22 +111,22 @@
                 <p class="page-subtitle">左侧专注输入，右侧即时预览。保存状态、快捷键和常用 Markdown 插入按钮都尽量放在手边，不打断写作流。</p>
             </div>
             <div class="hero-actions">
-                <button type="submit" form="noteForm" class="btn btn-primary" style="width: auto;" id="saveBtn"><i class="fa-solid fa-floppy-disk"></i> 保存笔记</button>
-                <a href="{{ url_for('main.notes') }}" class="btn btn-ghost" style="width: auto;"><i class="fa-solid fa-arrow-left"></i> 返回列表</a>
+                <button type="submit" form="noteForm" class="btn btn-primary btn-auto" id="saveBtn"><i class="fa-solid fa-floppy-disk"></i> 保存笔记</button>
+                <a href="{{ url_for('main.notes') }}" class="btn btn-ghost btn-auto"><i class="fa-solid fa-arrow-left"></i> 返回列表</a>
             </div>
         </div>
         <div class="editor-meta-bar">
             <span class="utility-pill"><i class="fa-solid fa-keyboard"></i> 支持 `Ctrl/Cmd + S` 快速保存</span>
-            <span class="utility-pill"><i class="fa-solid fa-circle" id="save-status" style="font-size: 0.55rem; color: var(--success);"></i> <span id="dirty-msg" style="opacity: 0;">内容未保存</span><span id="save-clean-msg">当前已保存</span></span>
+            <span class="utility-pill"><i class="fa-solid fa-circle status-dot-sm" id="save-status" style="color: var(--success);"></i> <span id="dirty-msg" class="opacity-hidden">内容未保存</span><span id="save-clean-msg">当前已保存</span></span>
             <span class="utility-pill"><i class="fa-brands fa-markdown"></i> Markdown 即时预览</span>
         </div>
     </section>
 
-    <form action="{{ url_for('main.edit_note', filename=original_filename) if is_edit else url_for('main.create_note') }}" method="post" id="noteForm" style="display: flex; flex-direction: column; gap: 1rem; flex-grow: 1;">
+    <form action="{{ url_for('main.edit_note', filename=original_filename) if is_edit else url_for('main.create_note') }}" method="post" id="noteForm" class="editor-form-stack">
         <section class="glass-panel">
             <div class="section-head">
                 <div class="section-title">
-                    <i class="fa-solid fa-heading" style="color: var(--accent-light);"></i>
+                    <i class="fa-solid fa-heading section-icon-accent"></i>
                     <div>
                         <h2>{{ '笔记标题' if is_edit else '先给这条笔记一个名字' }}</h2>
                         <div class="section-kicker">支持目录风格命名，例如 `学习/Python笔记`。</div>
@@ -141,7 +141,7 @@
         <section class="glass-panel surface-card">
             <div class="section-head">
                 <div class="section-title">
-                    <i class="fa-solid fa-pen-to-square" style="color: var(--accent-light);"></i>
+                    <i class="fa-solid fa-pen-to-square section-icon-accent"></i>
                     <div>
                         <h2>编辑与预览</h2>
                         <div class="section-kicker">左边写，右边看，减少保存前来回切换。</div>

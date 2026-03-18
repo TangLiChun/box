@@ -84,8 +84,8 @@
                 <p class="page-subtitle">更适合阅读的排版、更明确的返回与编辑操作，让一条笔记在查看时更像一份成品文档，而不是一块简单文本。</p>
             </div>
             <div class="hero-actions">
-                <a href="{{ url_for('main.notes') }}" class="btn btn-ghost" style="width: auto;"><i class="fa-solid fa-arrow-left"></i> 返回笔记列表</a>
-                <a href="{{ url_for('main.edit_note', filename=filename) }}" class="btn btn-primary" style="width: auto;"><i class="fa-solid fa-pen"></i> 继续编辑</a>
+                <a href="{{ url_for('main.notes') }}" class="btn btn-ghost btn-auto"><i class="fa-solid fa-arrow-left"></i> 返回笔记列表</a>
+                <a href="{{ url_for('main.edit_note', filename=filename) }}" class="btn btn-primary btn-auto"><i class="fa-solid fa-pen"></i> 继续编辑</a>
             </div>
         </div>
     </section>
@@ -93,7 +93,7 @@
     <section class="glass-panel surface-card">
         <div class="section-head">
             <div class="section-title">
-                <i class="fa-solid fa-book-open-reader" style="color: var(--accent-light);"></i>
+                <i class="fa-solid fa-book-open-reader section-icon-accent"></i>
                 <div>
                     <h2>正文内容</h2>
                     <div class="section-kicker">代码块、标题、表格和引用都按阅读场景重新强调。</div>

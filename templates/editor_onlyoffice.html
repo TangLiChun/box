@@ -107,9 +107,9 @@
         <a href="{{ url_for('main.index') }}" class="back-btn"><i class="fa-solid fa-arrow-left"></i> 返回文件列表</a>
     </div>
     <div id="placeholder">
-        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: white; font-family: sans-serif;">
-            <div id="loader" style="margin-bottom: 20px;">
-                <div style="width: 50px; height: 50px; border: 4px solid rgba(100, 160, 230, 0.12); border-top-color: #3aa9ff; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+        <div class="loader-shell">
+            <div id="loader" class="loader-block">
+                <div class="loader-ring"></div>
             </div>
             <div id="status-msg">正在加载 ONLYOFFICE 编辑器...</div>
         </div>
@@ -124,7 +124,7 @@
         function onApiError() {
             const loader = document.getElementById('loader');
             if (loader) loader.style.display = 'none';
-            document.getElementById('status-msg').innerHTML = '<span style="color: #e74c3c; padding: 20px; text-align: center;">无法加载 ONLYOFFICE API。<br>请检查设置中的 Document Server 地址是否正确，<br>并确保浏览器可以访问到该地址。</span>';
+            document.getElementById('status-msg').innerHTML = '<span class="status-error">无法加载 ONLYOFFICE API。<br>请检查设置中的 Document Server 地址是否正确，<br>并确保浏览器可以访问到该地址。</span>';
         }
 
         try {
