@@ -43,8 +43,10 @@ def run_update_command(command, cwd, timeout=120):
     return {
         'ok': completed.returncode == 0,
         'command': ' '.join(command),
-        'stdout': completed.stdout.strip(),
-        'stderr': completed.stderr.strip(),
+        # Preserve leading spaces because `git status --porcelain` uses them
+        # as part of the status format.
+        'stdout': completed.stdout.rstrip(),
+        'stderr': completed.stderr.rstrip(),
         'returncode': completed.returncode,
     }
 

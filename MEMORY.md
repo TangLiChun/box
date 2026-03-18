@@ -65,8 +65,11 @@ Current behavior:
   - `TRASH_FOLDER`
   - `DATABASE`
   - `TESTING`
+- default runtime path config is now centralized through a helper that builds the default app config before overrides are applied
+- compatibility path globals are now synchronized from `app.config` instead of being assigned piecemeal inside `create_app()`
 - key wrappers like `get_db()` and file/trash path helpers now prefer the active app config when an app context exists
 - they still fall back to module globals for compatibility
+- `init_db(target_app=None)` now accepts an explicit app, and `create_app()` initializes the DB via `init_db(app)` instead of relying only on the module-global app
 
 This means the factory path is partially normalized, but not all compatibility globals have been removed yet.
 
@@ -94,15 +97,18 @@ Current test behavior:
 - tests now create an isolated app instance with `app_module.create_app({...})`
 - test client is built from that isolated app
 - many `app_context()` usages were switched to `self.app.app_context()`
-- some compatibility bookkeeping remains in test setup/teardown for `app_module.app` and a few top-level globals
+- direct test dependence on `app_module.DATABASE` / `UPLOAD_FOLDER` / `NOTES_FOLDER` / `TRASH_FOLDER` and `app_module.g` was removed
+- the redundant `app_module.app = self.app` assignment in test setup was removed because `create_app()` already updates the compatibility app reference
+- some compatibility bookkeeping still remains in teardown for restoring `app_module.app`
 
 Redundant setup code was already reduced once:
 - repeated config backup/restore fields were removed
 - repeated path reassignment in test setup was reduced
+- repeated direct DB access in tests was partially normalized behind a local helper
 
 Remaining test cleanup work:
-- reduce direct reliance on `app_module.DATABASE` / `UPLOAD_FOLDER` / `NOTES_FOLDER` / `TRASH_FOLDER`
 - gradually stop patching/importing through `app.py` where module-level imports would be clearer
+- decide how much longer `app_module.app` restoration should remain in test teardown versus moving tests to purely instance-local access
 
 ## Current Architectural Status
 
@@ -112,6 +118,15 @@ It is now roughly:
 - `app.py`: entrypoint + compatibility layer + app factory
 - `nexfile/*`: feature modules and service modules
 - `main_bp`: thin route registration
+
+## Git / Repo Status
+
+- the local directory is now initialized as a Git repository
+- GitHub remote is configured for `git@github.com:TangLiChun/box.git`
+- SSH auth was set up using `~/.ssh/id_ed25519_github` with an entry in `~/.ssh/config`
+- local work was merged with the existing remote `main` history using a merge commit
+- current remote-tracking `main` includes the pushed merge commit `deac619`
+- `.gitignore` now excludes `users.db` so runtime DB state is not committed by default
 
 ## Recommended Next Steps
 
@@ -144,6 +159,9 @@ It is now roughly:
    Current `configure_main_blueprint(...)` dependency dictionary works, but is transitional.
    Future cleanup should move toward `create_app()` + `current_app`/extensions/service container patterns.
 
+4. Split the large security/integration test file
+   `test_security_and_trash.py` is still carrying multiple concerns and would benefit from a shared factory-first base plus smaller focused test modules.
+
 ## Things To Be Careful About
 
 - Existing tests patch top-level names in `app.py`; do not remove those casually yet.
@@ -151,3 +169,4 @@ It is now roughly:
 - `admin_required` redirects must continue targeting `main.login`.
 - ONLYOFFICE helpers are intentionally still re-exported through `app.py` for compatibility.
 - `create_app()` currently exists, and key wrappers now prefer active app config, but module-level compatibility globals still exist. Do not remove them until tests are further migrated.
+- The remote GitHub repo already had prior history and branches; future pushes should be normal now that this local repo tracks `origin/main`.

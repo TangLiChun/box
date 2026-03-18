@@ -312,10 +312,13 @@
         checkBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 检查中';
         try {
             const response = await fetch('/admin/update/status');
-            const result = await response.json();
+            const result = await response.json().catch(() => null);
+            if (!response.ok || !result) {
+                throw new Error((result && result.message) || `HTTP ${response.status}`);
+            }
             renderUpdateStatus(result);
         } catch (e) {
-            showToast('检查更新失败', 'error');
+            showToast(`检查更新失败: ${e.message || '未知错误'}`, 'error');
         } finally {
             checkBtn.disabled = false;
             checkBtn.innerHTML = '<i class="fa-solid fa-rotate"></i> 检查更新';
@@ -349,11 +352,14 @@
 
         try {
             const response = await fetch('/admin/update/apply', { method: 'POST' });
-            const result = await response.json();
+            const result = await response.json().catch(() => null);
+            if (!response.ok || !result) {
+                throw new Error((result && result.message) || `HTTP ${response.status}`);
+            }
             renderUpdateStatus(result);
             showToast(result.message || (result.success ? '升级完成' : '升级失败'), result.success ? 'success' : 'error');
         } catch (e) {
-            showToast('执行升级失败', 'error');
+            showToast(`执行升级失败: ${e.message || '未知错误'}`, 'error');
         } finally {
             applyBtn.innerHTML = '<i class="fa-solid fa-cloud-arrow-down"></i> 执行升级';
             if (latestUpdateStatus) {
