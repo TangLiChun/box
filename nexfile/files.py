@@ -1,5 +1,7 @@
 import mimetypes
 import os
+import hashlib
+import math
 from datetime import datetime
 
 from flask import abort, jsonify, redirect, render_template, request, send_from_directory, session, url_for
@@ -119,20 +121,64 @@ def handle_analyze_file(filename, is_authenticated, resolve_item_path):
     created = datetime.fromtimestamp(stat.st_ctime).strftime('%Y-%m-%d %H:%M:%S')
     modified = datetime.fromtimestamp(stat.st_mtime).strftime('%Y-%m-%d %H:%M:%S')
 
+    def format_size_value(size):
+        units = ['B', 'KB', 'MB', 'GB', 'TB']
+        value = float(size)
+        unit_index = 0
+        while value >= 1024 and unit_index < len(units) - 1:
+            value /= 1024
+            unit_index += 1
+        if unit_index == 0:
+            return f'{int(value)} {units[unit_index]}'
+        return f'{value:.2f} {units[unit_index]}'
+
     hex_header = ''
+    md5_hash = hashlib.md5()
+    sha256_hash = hashlib.sha256()
+    byte_frequencies = [0] * 256
+    total_bytes = 0
     try:
         with open(filepath, 'rb') as handle:
             header = handle.read(16)
             hex_header = ' '.join(f'{header_byte:02x}' for header_byte in header)
+            md5_hash.update(header)
+            sha256_hash.update(header)
+            total_bytes += len(header)
+            for header_byte in header:
+                byte_frequencies[header_byte] += 1
+
+            while True:
+                chunk = handle.read(8192)
+                if not chunk:
+                    break
+                md5_hash.update(chunk)
+                sha256_hash.update(chunk)
+                total_bytes += len(chunk)
+                for chunk_byte in chunk:
+                    byte_frequencies[chunk_byte] += 1
     except Exception:
         hex_header = '无法读取文件十六进制数据'
+
+    entropy = 0.0
+    if total_bytes:
+        for count in byte_frequencies:
+            if count:
+                probability = count / total_bytes
+                entropy -= probability * math.log2(probability)
 
     analysis = {
         'filename': safe_name,
         'size_bytes': size_bytes,
+        'size': format_size_value(size_bytes),
         'mime_type': mime_type,
+        'mime': mime_type,
+        'type': os.path.splitext(safe_name)[1].lstrip('.').upper() or '未知',
         'created_at': created,
         'modified_at': modified,
         'hex_header_preview': hex_header.upper(),
+        'hex_header': hex_header.upper(),
+        'md5': md5_hash.hexdigest().upper() if total_bytes else '无法计算',
+        'sha256': sha256_hash.hexdigest().upper() if total_bytes else '无法计算',
+        'entropy': f'{entropy:.4f} bits/byte' if total_bytes else '无法计算',
     }
-    return jsonify({'success': True, 'analysis': analysis})
+    return jsonify({'success': True, 'analysis': analysis, **analysis})

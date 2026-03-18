@@ -421,29 +421,30 @@
         try {
             const response = await fetch(`/analyze/${encodeURIComponent(filename)}`);
             const data = await response.json();
+            const analysis = data.analysis || data;
             
-            if (data.error) {
-                renderAnalysisState(content, escapeHtml(data.error), true);
+            if (data.error || data.success === false) {
+                renderAnalysisState(content, escapeHtml(data.error || data.message || '获取分析数据失败'), true);
                 return;
             }
 
             content.className = 'analysis-grid';
             content.innerHTML = `
-                ${createAnalysisItem('文件类型', data.type)}
-                ${createAnalysisItem('MIME 类型', data.mime)}
-                ${createAnalysisItem('文件大小', data.size)}
+                ${createAnalysisItem('文件类型', analysis.type)}
+                ${createAnalysisItem('MIME 类型', analysis.mime || analysis.mime_type)}
+                ${createAnalysisItem('文件大小', analysis.size)}
                 <div class="analysis-item">
                     <label>MD5 哈希</label>
-                    <div class="value value-compact"><code>${escapeHtml(data.md5)}</code></div>
+                    <div class="value value-compact"><code>${escapeHtml(analysis.md5)}</code></div>
                 </div>
                 <div class="analysis-item">
                     <label>SHA256 哈希</label>
-                    <div class="value value-compact"><code>${escapeHtml(data.sha256)}</code></div>
+                    <div class="value value-compact"><code>${escapeHtml(analysis.sha256)}</code></div>
                 </div>
-                ${createAnalysisItem('熵值 (随机性)', data.entropy)}
+                ${createAnalysisItem('熵值 (随机性)', analysis.entropy)}
                 <div class="hex-preview analysis-item-wide">
                     <div class="hex-preview-label">十六进制头 (前16字节)</div>
-                    <code>${escapeHtml(data.hex_header)}</code>
+                    <code>${escapeHtml(analysis.hex_header || analysis.hex_header_preview)}</code>
                 </div>
             `;
         } catch (err) {
