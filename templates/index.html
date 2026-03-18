@@ -1,0 +1,394 @@
+{% extends "base.html" %}
+
+{% block title %}文件管理 - NexFile{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* Specific styles for index page if any */
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Upload Area -->
+<div class="dropzone glass-panel" id="dropzone" style="margin-bottom: 2rem;">
+    <div class="dropzone-inner">
+        <i class="fa-solid fa-cloud-arrow-up" style="font-size: 3rem; color: var(--accent); margin-bottom: 1rem;"></i>
+        <h3>拖拽文件至此 或 <span style="color: var(--accent); cursor: pointer;">浏览本地文件</span></h3>
+        <p style="color: var(--text-muted);">支持批量上传，单个文件最大 100MB</p>
+        <input type="file" id="fileInput" multiple style="display: none;">
+    </div>
+    <div id="uploadProgressContainer" style="display: none; margin-top: 1.5rem;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.9rem;">
+            <span id="uploadStatus">准备上传...</span>
+            <span id="uploadPercent">0%</span>
+        </div>
+        <div style="height: 6px; background: var(--bg-subtle); border-radius: 3px; overflow: hidden;">
+            <div id="uploadProgressBar" style="width: 0%; height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-light)); transition: width 0.3s;"></div>
+        </div>
+    </div>
+</div>
+
+<!-- View Controls & Search -->
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; gap: 1rem;">
+    <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <div class="view-toggle">
+            <button class="view-btn active" id="listViewBtn" title="列表视图"><i class="fa-solid fa-list"></i></button>
+            <button class="view-btn" id="gridViewBtn" title="网格视图"><i class="fa-solid fa-grid-2"></i></button>
+        </div>
+        <div class="search-container">
+            <i class="fa-solid fa-search search-icon"></i>
+            <input type="text" id="fileSearch" class="search-input" placeholder="搜索文件...">
+            <button id="clearSearch" class="clear-search-btn" style="display: none;"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+    </div>
+    <div style="color: var(--text-muted); font-size: 0.9rem;">
+        共 <span id="fileCount" style="color: var(--text-main); font-weight: 600;">{{ files|length }}</span> 个文件
+    </div>
+</div>
+
+<!-- List View -->
+<div id="listView" class="glass-panel table-responsive">
+    <table id="fileTable">
+        <thead>
+            <tr>
+                <th onclick="sortTable(0)" style="cursor: pointer;" title="点击排序"><i class="fa-solid fa-sort"></i> 文件名</th>
+                <th onclick="sortTable(1)" style="cursor: pointer;" title="点击排序"><i class="fa-solid fa-sort"></i> 大小</th>
+                <th onclick="sortTable(2)" style="cursor: pointer;" title="点击排序"><i class="fa-solid fa-sort"></i> 修改时间</th>
+                <th style="min-width: 150px;">操作</th>
+            </tr>
+        </thead>
+        <tbody id="fileTableBody">
+            {% for file in files %}
+            <tr id="row-{{ file.name }}">
+                <td class="file-name-cell">
+                    <i class="{{ file.icon }} file-icon"></i>
+                    <a href="{{ url_for('main.download_file', filename=file.name) }}" class="file-link" title="{{ file.name }}">{{ file.name }}</a>
+                </td>
+                <td data-sort="{{ file.size_raw }}">{{ file.size }}</td>
+                <td>{{ file.modified }}</td>
+                <td class="actions">
+                    <button onclick="analyzeFile('{{ file.name }}')" class="btn btn-sm btn-outline" title="分析"><i class="fa-solid fa-microscope"></i></button>
+                    {% if onlyoffice_url and file.name.split('.')[-1].lower() in office_extensions %}
+                        <a href="{{ url_for('main.onlyoffice_editor', filename=file.name) }}" class="btn btn-sm btn-outline" style="color: var(--accent);" title="编辑" target="_blank"><i class="fa-solid fa-pen-to-square"></i></a>
+                    {% endif %}
+                    <button onclick='shareItem("file", {{ file.name|tojson }}, this)' class="btn btn-sm btn-outline" title="分享"><i class="fa-solid fa-share-nodes"></i></button>
+                    <button onclick="deleteFile('{{ file.name }}')" class="btn btn-sm btn-danger" title="删除"><i class="fa-solid fa-trash-can"></i></button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Grid View -->
+<div id="gridView" class="file-grid" style="display: none;">
+    {% for file in files %}
+    <div class="file-card" id="card-{{ file.name }}" data-name="{{ file.name }}">
+        <div class="file-card-preview" onclick="analyzeFile('{{ file.name }}')">
+            <i class="{{ file.icon }}" style="font-size: 3.5rem; color: var(--accent);"></i>
+        </div>
+        <div class="file-card-info">
+            <div class="file-card-name">{{ file.name }}</div>
+            <div class="file-card-meta">{{ file.size }} · {{ file.modified }}</div>
+        </div>
+        <div class="file-card-actions">
+            <button class="card-action-btn" onclick="analyzeFile('{{ file.name }}')" title="分析"><i class="fa-solid fa-microscope"></i></button>
+            {% if onlyoffice_url and file.name.split('.')[-1].lower() in office_extensions %}
+                <a href="{{ url_for('main.onlyoffice_editor', filename=file.name) }}" class="card-action-btn" style="color: var(--accent);" title="编辑" target="_blank"><i class="fa-solid fa-pen-to-square"></i></a>
+            {% endif %}
+            <button class="card-action-btn" onclick='shareItem("file", {{ file.name|tojson }}, this)' title="分享"><i class="fa-solid fa-share-nodes"></i></button>
+            <button class="card-action-btn danger" onclick="deleteFile('{{ file.name }}')" title="删除"><i class="fa-solid fa-trash-can"></i></button>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Analysis Modal -->
+<div class="modal-overlay" id="analysisModal">
+    <div class="modal glass-panel">
+        <div class="modal-header">
+            <h3><i class="fa-solid fa-chart-pie"></i> 文件分析报告: <span id="targetFileName" style="color: var(--accent);"></span></h3>
+            <button class="close-btn" onclick="closeModal()">&times;</button>
+        </div>
+        <div id="analysisContent" class="analysis-grid">
+            <!-- Content loaded via JS -->
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Helper to get file icons
+    function getFileIcon(filename) {
+        const ext = filename.split('.').pop().toLowerCase();
+        const iconMap = {
+            'pdf': 'fa-solid fa-file-pdf',
+            'doc': 'fa-solid fa-file-word', 'docx': 'fa-solid fa-file-word',
+            'xls': 'fa-solid fa-file-excel', 'xlsx': 'fa-solid fa-file-excel',
+            'ppt': 'fa-solid fa-file-powerpoint', 'pptx': 'fa-solid fa-file-powerpoint',
+            'jpg': 'fa-solid fa-file-image', 'jpeg': 'fa-solid fa-file-image', 'png': 'fa-solid fa-file-image', 'gif': 'fa-solid fa-file-image',
+            'zip': 'fa-solid fa-file-zipper', 'rar': 'fa-solid fa-file-zipper', '7z': 'fa-solid fa-file-zipper',
+            'txt': 'fa-solid fa-file-lines', 'md': 'fa-solid fa-file-lines',
+            'mp3': 'fa-solid fa-file-audio', 'wav': 'fa-solid fa-file-audio',
+            'mp4': 'fa-solid fa-file-video', 'avi': 'fa-solid fa-file-video'
+        };
+        return iconMap[ext] || 'fa-solid fa-file';
+    }
+
+    // View Toggling
+    const listViewBtn = document.getElementById('listViewBtn');
+    const gridViewBtn = document.getElementById('gridViewBtn');
+    const listView = document.getElementById('listView');
+    const gridView = document.getElementById('gridView');
+
+    function setView(mode) {
+        if (mode === 'grid') {
+            listView.style.display = 'none';
+            gridView.style.display = 'grid';
+            listViewBtn.classList.remove('active');
+            gridViewBtn.classList.add('active');
+        } else {
+            listView.style.display = 'block';
+            gridView.style.display = 'none';
+            listViewBtn.classList.add('active');
+            gridViewBtn.classList.remove('active');
+        }
+        localStorage.setItem('nexfile-view', mode);
+    }
+
+    listViewBtn.addEventListener('click', () => setView('list'));
+    gridViewBtn.addEventListener('click', () => setView('grid'));
+    
+    // Restore preferred view
+    const savedView = localStorage.getItem('nexfile-view') || 'list';
+    setView(savedView);
+
+    // Search Logic
+    const fileSearch = document.getElementById('fileSearch');
+    const fileTableBody = document.getElementById('fileTableBody');
+    const clearSearch = document.getElementById('clearSearch');
+    const fileCards = document.querySelectorAll('.file-card');
+
+    fileSearch.addEventListener('input', (e) => {
+        const term = e.target.value.toLowerCase();
+        clearSearch.style.display = term ? 'block' : 'none';
+        
+        // Filter Table
+        let visibleCount = 0;
+        Array.from(fileTableBody.rows).forEach(row => {
+            const fileName = row.cells[0].innerText.toLowerCase();
+            const matches = fileName.includes(term);
+            row.style.display = matches ? '' : 'none';
+            if(matches) visibleCount++;
+        });
+
+        // Filter Grid
+        fileCards.forEach(card => {
+            const fileName = card.dataset.name.toLowerCase();
+            card.style.display = fileName.includes(term) ? '' : 'none';
+        });
+
+        document.getElementById('fileCount').innerText = visibleCount;
+    });
+
+    clearSearch.addEventListener('click', () => {
+        fileSearch.value = '';
+        fileSearch.dispatchEvent(new Event('input'));
+        fileSearch.focus();
+    });
+
+    // Upload Logic
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('fileInput');
+
+    dropzone.addEventListener('click', () => fileInput.click());
+    dropzone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropzone.classList.add('active');
+    });
+    dropzone.addEventListener('dragleave', () => dropzone.classList.remove('active'));
+    dropzone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropzone.classList.remove('active');
+        handleFiles(e.dataTransfer.files);
+    });
+
+    fileInput.addEventListener('change', () => handleFiles(fileInput.files));
+
+    async function handleFiles(files) {
+        if (!files.length) return;
+        
+        const container = document.getElementById('uploadProgressContainer');
+        const progressBar = document.getElementById('uploadProgressBar');
+        const status = document.getElementById('uploadStatus');
+        const percent = document.getElementById('uploadPercent');
+        
+        container.style.display = 'block';
+        
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            status.innerText = `正在上传 (${i+1}/${files.length}): ${file.name}`;
+            
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', '/', true);
+                
+                xhr.upload.onprogress = (e) => {
+                    if (e.lengthComputable) {
+                        const p = Math.round((e.loaded / e.total) * 100);
+                        progressBar.style.width = p + '%';
+                        percent.innerText = p + '%';
+                    }
+                };
+
+                const promise = new Promise((resolve, reject) => {
+                    xhr.onload = () => xhr.status === 200 ? resolve() : reject();
+                    xhr.onerror = () => reject();
+                });
+
+                xhr.send(formData);
+                await promise;
+            } catch (err) {
+                showToast(`上传失败: ${file.name}`, 'error');
+            }
+        }
+        
+        showToast("所有文件上传完成", 'success');
+        setTimeout(() => location.reload(), 1000);
+    }
+
+    // Analysis Logic
+    async function analyzeFile(filename) {
+        const modal = document.getElementById('analysisModal');
+        const content = document.getElementById('analysisContent');
+        const title = document.getElementById('targetFileName');
+        
+        title.innerText = filename;
+        content.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 2rem;"><i class="fa-solid fa-spinner fa-spin" style="font-size: 2rem; color: var(--accent);"></i><p style="margin-top: 1rem;">深度分析中精度...</p></div>';
+        modal.classList.add('active');
+
+        try {
+            const response = await fetch(`/analyze/${encodeURIComponent(filename)}`);
+            const data = await response.json();
+            
+            if (data.error) {
+                content.innerHTML = `<div style="grid-column: 1/-1; color: var(--danger); text-align: center;">${data.error}</div>`;
+                return;
+            }
+
+            content.innerHTML = `
+                <div class="analysis-item"><label>文件类型</label><div class="value">${data.type}</div></div>
+                <div class="analysis-item"><label>MIME 类型</label><div class="value">${data.mime}</div></div>
+                <div class="analysis-item"><label>文件大小</label><div class="value">${data.size}</div></div>
+                <div class="analysis-item"><label>MD5 哈希</label><div class="value" style="font-size: 0.8rem;">${data.md5}</div></div>
+                <div class="analysis-item"><label>SHA256 哈希</label><div class="value" style="font-size: 0.8rem;">${data.sha256}</div></div>
+                <div class="analysis-item"><label>熵值 (随机性)</label><div class="value">${data.entropy}</div></div>
+                <div class="hex-preview">
+                    <div style="margin-bottom: 0.5rem; color: #94a3b8; font-size: 0.8rem; font-family: sans-serif;">十六进制头 (前16字节)</div>
+                    <code>${data.hex_header}</code>
+                </div>
+            `;
+        } catch (err) {
+            content.innerHTML = '<div style="grid-column: 1/-1; color: var(--danger); text-align: center;">获取分析数据失败</div>';
+        }
+    }
+
+    function closeModal() {
+        document.getElementById('analysisModal').classList.remove('active');
+    }
+
+    async function deleteFile(filename) {
+        if(!confirm(`确定要将文件 ${filename} 移至回收站吗？`)) return;
+        try {
+            const response = await fetch(`/delete/${encodeURIComponent(filename)}`, { method: 'POST' });
+            const result = await response.json();
+            if(result.success) {
+                showToast(result.message, 'success');
+                document.getElementById(`row-${filename}`)?.remove();
+                document.getElementById(`card-${filename}`)?.remove();
+                
+                // Update count
+                const countSpan = document.getElementById('fileCount');
+                countSpan.innerText = parseInt(countSpan.innerText) - 1;
+            } else {
+                showToast(result.message, 'error');
+            }
+        } catch (err) {
+            showToast("删除操作失败", 'error');
+        }
+    }
+
+    // Sorting
+    let sortDirections = [true, true, true];
+    function sortTable(n) {
+        const table = document.getElementById("fileTable");
+        const tbody = document.getElementById("fileTableBody");
+        const rows = Array.from(tbody.rows);
+        const isAsc = sortDirections[n];
+        
+        rows.sort((a, b) => {
+            let x, y;
+            if (n === 1) { // Size
+                x = parseFloat(a.cells[n].dataset.sort);
+                y = parseFloat(b.cells[n].dataset.sort);
+                return isAsc ? x - y : y - x;
+            } else {
+                x = a.cells[n].innerText.toLowerCase();
+                y = b.cells[n].innerText.toLowerCase();
+                return isAsc ? x.localeCompare(y) : y.localeCompare(x);
+            }
+        });
+
+        sortDirections[n] = !isAsc;
+        rows.forEach(row => tbody.appendChild(row));
+        
+        // Update header icons
+        const headers = table.querySelectorAll('th i');
+        headers.forEach((h, i) => {
+            if (i === n) {
+                h.className = isAsc ? "fa-solid fa-sort-up" : "fa-solid fa-sort-down";
+            } else {
+                h.className = "fa-solid fa-sort";
+            }
+        });
+    }
+    
+    async function shareItem(type, filename, btn) {
+        try {
+            const response = await fetch('/share/create', { 
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({type: type, filename: filename})
+            });
+            const result = await response.json();
+            if(result.success) {
+                copyShareLink(result.share_id, type);
+                // Badge already shown if reload, but we can add or pulse the button
+            } else {
+                showToast("分享失败: " + result.message, 'error');
+            }
+        } catch(e) {
+             showToast("网络请求错误", 'error');
+        }
+    }
+    
+    function copyShareLink(share_id, type) {
+        const prefix = type === 'file' ? '/s/f/' : '/s/n/';
+        const url = window.location.origin + prefix + share_id;
+        navigator.clipboard.writeText(url).then(() => {
+            showToast("链接已复制", 'success');
+        }).catch(err => {
+            showToast("复制失败: " + url, 'error');
+        });
+    }
+
+    // Modal click-outside
+    document.getElementById('analysisModal').addEventListener('click', function(e) {
+        if(e.target === this) closeModal();
+    });
+</script>
+{% endblock %}

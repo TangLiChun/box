@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+
+instance/
+uploads/
+notes/
+trash/
+users.db
+
+.DS_Store

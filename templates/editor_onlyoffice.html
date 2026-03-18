@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>{{ filename }} - ONLYOFFICE Editor</title>
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #2c3e50;
+        }
+        #placeholder {
+            height: 100%;
+            width: 100%;
+        }
+        .back-btn {
+            position: fixed;
+            top: 1rem;
+            right: 1.5rem;
+            z-index: 1000;
+            background: rgba(14, 26, 48, 0.88);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            color: #fff;
+            border: 1px solid var(--border-default);
+            padding: 0.6rem 1.25rem;
+            border-radius: var(--radius-md);
+            text-decoration: none;
+            font-family: inherit;
+            font-size: 0.88rem;
+            font-weight: 500;
+            transition: all var(--duration-base) var(--ease-out);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .back-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--accent);
+            color: var(--accent);
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <a href="{{ url_for('main.index') }}" class="back-btn">返回文件列表</a>
+    <div id="placeholder">
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: white; font-family: sans-serif;">
+            <div id="loader" style="margin-bottom: 20px;">
+                <div style="width: 50px; height: 50px; border: 4px solid var(--border-default); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite;"></div>
+            </div>
+            <div id="status-msg">正在加载 ONLYOFFICE 编辑器...</div>
+        </div>
+    </div>
+
+    <style>
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+
+    <script type="text/javascript" src="{{ onlyoffice_url }}web-apps/apps/api/documents/api.js" onerror="onApiError()"></script>
+    <script type="text/javascript">
+        function onApiError() {
+            const loader = document.getElementById('loader');
+            if (loader) loader.style.display = 'none';
+            document.getElementById('status-msg').innerHTML = '<span style="color: #e74c3c; padding: 20px; text-align: center;">无法加载 ONLYOFFICE API。<br>请检查设置中的 Document Server 地址是否正确，<br>并确保浏览器可以访问到该地址。</span>';
+        }
+
+        try {
+            if (typeof DocsAPI !== 'undefined') {
+                window.docEditor = new DocsAPI.DocEditor("placeholder", {{ config | tojson }});
+            } else {
+                // Wait a bit more for slow loads
+                setTimeout(() => {
+                    if (typeof DocsAPI === 'undefined') onApiError();
+                }, 5000);
+            }
+        } catch (e) {
+            console.error(e);
+            onApiError();
+        }
+    </script>
+</body>
+</html>

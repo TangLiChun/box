@@ -1,0 +1,556 @@
+{% extends "base.html" %}
+
+{% block title %}幸运转盘 - NexFile{% endblock %}
+
+{% block extra_head %}
+<style>
+    .game-layout {
+        display: flex;
+        gap: 2rem;
+        max-width: 1000px;
+        margin: 0 auto;
+        align-items: flex-start;
+    }
+    @media (max-width: 768px) {
+        .game-layout {
+            flex-direction: column;
+            align-items: center;
+        }
+    }
+    .wheel-section {
+        flex: 0 0 auto;
+    }
+    .options-section {
+        flex: 1;
+        min-width: 250px;
+    }
+    .wheel-container {
+        position: relative;
+        width: 360px;
+        height: 360px;
+        margin: 0 auto;
+    }
+    #wheelCanvas {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        box-shadow: var(--shadow-lg), var(--shadow-glow);
+    }
+    .pointer {
+        position: absolute;
+        top: -10px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 0;
+        height: 0;
+        border-left: 18px solid transparent;
+        border-right: 18px solid transparent;
+        border-top: 36px solid var(--danger);
+        z-index: 10;
+        filter: drop-shadow(0 4px 10px rgba(0,0,0,0.5));
+    }
+    .spin-btn {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 72px;
+        height: 72px;
+        background: var(--danger);
+        border: 4px solid white;
+        border-radius: 50%;
+        color: white;
+        font-weight: bold;
+        font-size: 0.85rem;
+        cursor: pointer;
+        z-index: 11;
+        box-shadow: 0 0 20px rgba(255,255,255,0.4);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.2s;
+    }
+    .spin-btn:hover {
+        transform: translate(-50%, -50%) scale(1.1);
+    }
+    .spin-btn:active {
+        transform: translate(-50%, -50%) scale(0.95);
+    }
+    .spin-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    #resultMessage {
+        text-align: center;
+        margin-top: 1.5rem;
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--accent);
+        min-height: 2.2rem;
+        text-shadow: 0 2px 10px rgba(58, 169, 255, 0.3);
+    }
+    .option-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+    .option-item input {
+        flex: 1;
+        padding: 0.6rem 0.8rem;
+        border: 1px solid var(--border-default);
+        border-radius: 8px;
+        background: var(--bg-input);
+        color: var(--text-primary);
+        font-size: 0.9rem;
+    }
+    .option-item input:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 2px rgba(58,169,255,0.15);
+    }
+    .option-remove-btn {
+        background: rgba(255,71,87,0.15);
+        color: var(--danger);
+        border: none;
+        border-radius: 8px;
+        width: 36px;
+        height: 36px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+        transition: background 0.2s;
+    }
+    .option-remove-btn:hover {
+        background: rgba(255,71,87,0.3);
+    }
+    .add-option-btn {
+        background: var(--accent-soft);
+        color: var(--accent);
+        border: 1px dashed rgba(58,169,255,0.3);
+        border-radius: 8px;
+        padding: 0.6rem;
+        width: 100%;
+        cursor: pointer;
+        font-size: 0.9rem;
+        transition: background 0.2s;
+        margin-top: 0.5rem;
+    }
+    .add-option-btn:hover {
+        background: var(--accent-hover);
+    }
+    .options-actions {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 1rem;
+    }
+    .options-actions .btn {
+        flex: 1;
+        font-size: 0.85rem;
+    }
+    .batch-area {
+        display: none;
+        margin-top: 0.8rem;
+    }
+    .batch-area.show {
+        display: block;
+    }
+    .batch-area textarea {
+        width: 100%;
+        min-height: 120px;
+        padding: 0.7rem;
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 8px;
+        background: var(--bg-input);
+        color: var(--text-primary);
+        font-size: 0.9rem;
+        resize: vertical;
+        font-family: inherit;
+    }
+    .batch-area textarea:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 2px rgba(58,169,255,0.15);
+    }
+    .batch-area textarea::placeholder {
+        color: var(--text-muted);
+    }
+    .batch-confirm {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+    }
+    .batch-confirm .btn {
+        flex: 1;
+        font-size: 0.85rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="glass-panel" style="max-width: 1050px; margin: 0 auto;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h2 style="margin: 0;"><i class="fa-solid fa-dharmachakra"></i> 幸运转盘</h2>
+        {% if not is_public %}
+        <button id="shareGameBtn" class="btn btn-primary" style="width: auto;"><i class="fa-solid fa-share-nodes"></i> 分享转盘</button>
+        {% endif %}
+    </div>
+
+    <div class="game-layout">
+        <div class="wheel-section">
+            <div class="wheel-container">
+                <div class="pointer"></div>
+                <canvas id="wheelCanvas" width="720" height="720"></canvas>
+                <button id="spinBtn" class="spin-btn">SPIN</button>
+            </div>
+            <div id="resultMessage"></div>
+        </div>
+
+        {% if not is_public %}
+        <div class="options-section">
+            <div class="glass-panel" style="padding: 1.2rem;">
+                <h3 style="margin: 0 0 1rem 0; font-size: 1rem;"><i class="fa-solid fa-list-check"></i> 转盘选项</h3>
+                <div id="optionsList"></div>
+                <button id="addOptionBtn" class="add-option-btn"><i class="fa-solid fa-plus"></i> 添加选项</button>
+                <div class="batch-area" id="batchArea">
+                    <textarea id="batchInput" placeholder="每行一个选项，例如：&#10;一等奖&#10;二等奖&#10;三等奖&#10;谢谢参与"></textarea>
+                    <div class="batch-confirm">
+                        <button id="batchReplaceBtn" class="btn btn-primary">替换全部</button>
+                        <button id="batchAppendBtn" class="btn" style="background: rgba(58,169,255,0.1); color: #3aa9ff;">追加</button>
+                        <button id="batchCancelBtn" class="btn" style="background: rgba(255, 255, 255, 0.04);">取消</button>
+                    </div>
+                </div>
+                <div class="options-actions">
+                    <button id="batchToggleBtn" class="btn" style="background: var(--accent-soft); color: #3aa9ff; width: auto;"><i class="fa-solid fa-layer-group"></i> 批量添加</button>
+                    <button id="resetOptionsBtn" class="btn" style="background: rgba(255, 255, 255, 0.04); width: auto;"><i class="fa-solid fa-rotate-left"></i> 重置</button>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if shared_data %}
+    <div style="text-align: center; color: var(--text-muted); margin-top: 1rem;">
+        <i class="fa-solid fa-info-circle"></i> 正在访问共享的转盘
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const canvas = document.getElementById('wheelCanvas');
+    const ctx = canvas.getContext('2d');
+    const spinBtn = document.getElementById('spinBtn');
+    const resultMsg = document.getElementById('resultMessage');
+    const shareBtn = document.getElementById('shareGameBtn');
+    const addOptionBtn = document.getElementById('addOptionBtn');
+    const resetOptionsBtn = document.getElementById('resetOptionsBtn');
+    const optionsList = document.getElementById('optionsList');
+    const batchToggleBtn = document.getElementById('batchToggleBtn');
+    const batchArea = document.getElementById('batchArea');
+    const batchInput = document.getElementById('batchInput');
+    const batchReplaceBtn = document.getElementById('batchReplaceBtn');
+    const batchAppendBtn = document.getElementById('batchAppendBtn');
+    const batchCancelBtn = document.getElementById('batchCancelBtn');
+
+    const STORAGE_KEY = 'nexfile_wheel_options';
+    const DEFAULT_OPTIONS = ['大奖', '谢谢参与', '积分 +10', '谢谢参与', '优惠券', '谢谢参与', '再来一次', '谢谢参与'];
+    const COLORS = [
+        '#3aa9ff', '#1e293b', '#7dd3fc', '#0f172a',
+        '#2dd4bf', '#334155', '#a78bfa', '#1e1b4b',
+        '#f472b6', '#1c1917', '#fbbf24', '#292524'
+    ];
+
+    let prizes = [];
+    let isSpinning = false;
+    let currentAngle = 0;
+    let animationId = null;
+
+    // --- Shared data support ---
+    const sharedData = {{ shared_data | tojson if shared_data else 'null' }};
+
+    function loadOptions() {
+        if (sharedData) {
+            try {
+                const parsed = JSON.parse(sharedData);
+                if (Array.isArray(parsed) && parsed.length >= 2) {
+                    return parsed.map(String).filter(s => s.trim());
+                }
+            } catch(e) {}
+            // Try comma-separated
+            const items = sharedData.split(',').map(s => s.trim()).filter(Boolean);
+            if (items.length >= 2) return items;
+        }
+        try {
+            const stored = localStorage.getItem(STORAGE_KEY);
+            if (stored) {
+                const parsed = JSON.parse(stored);
+                if (Array.isArray(parsed) && parsed.length >= 2) return parsed;
+            }
+        } catch(e) {}
+        return [...DEFAULT_OPTIONS];
+    }
+
+    function saveOptions() {
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(prizes));
+        } catch(e) {}
+    }
+
+    // --- Draw wheel on canvas ---
+    function drawWheel() {
+        const w = canvas.width;
+        const h = canvas.height;
+        const cx = w / 2;
+        const cy = h / 2;
+        const r = Math.min(cx, cy) - 8;
+        const n = prizes.length;
+        if (n === 0) return;
+
+        const sliceAngle = (2 * Math.PI) / n;
+
+        ctx.clearRect(0, 0, w, h);
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(currentAngle);
+
+        for (let i = 0; i < n; i++) {
+            const startA = i * sliceAngle - Math.PI / 2;
+            const endA = startA + sliceAngle;
+
+            // Draw slice
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.arc(0, 0, r, startA, endA);
+            ctx.closePath();
+            ctx.fillStyle = COLORS[i % COLORS.length];
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Draw text
+            ctx.save();
+            ctx.rotate(startA + sliceAngle / 2);
+            ctx.textAlign = 'right';
+            ctx.fillStyle = '#ffffff';
+            ctx.font = `bold ${Math.min(24, Math.max(12, Math.floor(200 / n)))}px "Microsoft YaHei", sans-serif`;
+            ctx.shadowColor = 'rgba(0,0,0,0.5)';
+            ctx.shadowBlur = 3;
+            const text = prizes[i].length > 8 ? prizes[i].slice(0, 7) + '…' : prizes[i];
+            ctx.fillText(text, r - 20, 6);
+            ctx.restore();
+        }
+
+        // Outer ring
+        ctx.beginPath();
+        ctx.arc(0, 0, r, 0, 2 * Math.PI);
+        ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+        ctx.lineWidth = 8;
+        ctx.stroke();
+
+        ctx.restore();
+    }
+
+    // --- Spin animation ---
+    function spin() {
+        if (isSpinning || prizes.length < 2) return;
+        isSpinning = true;
+        spinBtn.disabled = true;
+        resultMsg.innerText = '旋转中...';
+
+        const totalRotation = (5 + Math.random() * 5) * 2 * Math.PI + Math.random() * 2 * Math.PI;
+        const targetAngle = currentAngle + totalRotation;
+        const duration = 4000;
+        const startTime = performance.now();
+        const startAngle = currentAngle;
+
+        function easeOut(t) {
+            return 1 - Math.pow(1 - t, 3);
+        }
+
+        function animate(now) {
+            const elapsed = now - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            currentAngle = startAngle + totalRotation * easeOut(progress);
+            drawWheel();
+
+            if (progress < 1) {
+                animationId = requestAnimationFrame(animate);
+            } else {
+                isSpinning = false;
+                spinBtn.disabled = false;
+                // Determine which slice the pointer (top) lands on
+                const n = prizes.length;
+                const sliceAngle = (2 * Math.PI) / n;
+                // Normalize angle: pointer is at top (-PI/2); wheel rotated by currentAngle
+                let normalizedAngle = currentAngle % (2 * Math.PI);
+                if (normalizedAngle < 0) normalizedAngle += 2 * Math.PI;
+                // The slice at the top is the one whose range includes (2*PI - normalizedAngle)
+                const pointerAngle = (2 * Math.PI - normalizedAngle) % (2 * Math.PI);
+                const prizeIndex = Math.floor(pointerAngle / sliceAngle) % n;
+                resultMsg.innerText = `🎁 恭喜获得: ${prizes[prizeIndex]}`;
+                if (typeof showToast === 'function') {
+                    showToast(`获得奖品: ${prizes[prizeIndex]}`, 'success');
+                }
+            }
+        }
+
+        animationId = requestAnimationFrame(animate);
+    }
+
+    spinBtn.addEventListener('click', spin);
+
+    // --- Options Editor ---
+    function renderOptionsList() {
+        if (!optionsList) return;
+        optionsList.innerHTML = '';
+        prizes.forEach((prize, i) => {
+            const item = document.createElement('div');
+            item.className = 'option-item';
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = prize;
+            input.placeholder = `选项 ${i + 1}`;
+            input.addEventListener('input', () => {
+                prizes[i] = input.value;
+                saveOptions();
+                drawWheel();
+            });
+            const removeBtn = document.createElement('button');
+            removeBtn.className = 'option-remove-btn';
+            removeBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+            removeBtn.title = '删除此选项';
+            removeBtn.addEventListener('click', () => {
+                if (prizes.length <= 2) {
+                    if (typeof showToast === 'function') showToast('至少需要 2 个选项', 'error');
+                    return;
+                }
+                prizes.splice(i, 1);
+                saveOptions();
+                renderOptionsList();
+                drawWheel();
+            });
+            item.appendChild(input);
+            item.appendChild(removeBtn);
+            optionsList.appendChild(item);
+        });
+    }
+
+    if (addOptionBtn) {
+        addOptionBtn.addEventListener('click', () => {
+            prizes.push(`选项 ${prizes.length + 1}`);
+            saveOptions();
+            renderOptionsList();
+            drawWheel();
+            // Focus the new input
+            const inputs = optionsList.querySelectorAll('input');
+            if (inputs.length) {
+                const last = inputs[inputs.length - 1];
+                last.focus();
+                last.select();
+            }
+        });
+    }
+
+    // --- Batch import ---
+    if (batchToggleBtn) {
+        batchToggleBtn.addEventListener('click', () => {
+            batchArea.classList.toggle('show');
+            if (batchArea.classList.contains('show')) batchInput.focus();
+        });
+    }
+
+    function parseBatchInput() {
+        return batchInput.value.split('\n').map(s => s.trim()).filter(Boolean);
+    }
+
+    if (batchReplaceBtn) {
+        batchReplaceBtn.addEventListener('click', () => {
+            const items = parseBatchInput();
+            if (items.length < 2) {
+                if (typeof showToast === 'function') showToast('至少需要 2 个选项', 'error');
+                return;
+            }
+            prizes = items;
+            saveOptions();
+            renderOptionsList();
+            drawWheel();
+            batchInput.value = '';
+            batchArea.classList.remove('show');
+            if (typeof showToast === 'function') showToast(`已替换为 ${items.length} 个选项`, 'success');
+        });
+    }
+
+    if (batchAppendBtn) {
+        batchAppendBtn.addEventListener('click', () => {
+            const items = parseBatchInput();
+            if (items.length === 0) {
+                if (typeof showToast === 'function') showToast('请输入至少 1 个选项', 'error');
+                return;
+            }
+            prizes.push(...items);
+            saveOptions();
+            renderOptionsList();
+            drawWheel();
+            batchInput.value = '';
+            batchArea.classList.remove('show');
+            if (typeof showToast === 'function') showToast(`已追加 ${items.length} 个选项`, 'success');
+        });
+    }
+
+    if (batchCancelBtn) {
+        batchCancelBtn.addEventListener('click', () => {
+            batchInput.value = '';
+            batchArea.classList.remove('show');
+        });
+    }
+
+    if (resetOptionsBtn) {
+        resetOptionsBtn.addEventListener('click', () => {
+            prizes = [...DEFAULT_OPTIONS];
+            saveOptions();
+            renderOptionsList();
+            drawWheel();
+            if (typeof showToast === 'function') showToast('已重置为默认选项', 'success');
+        });
+    }
+
+    // --- Share ---
+    if (shareBtn) {
+        shareBtn.addEventListener('click', async () => {
+            const validPrizes = prizes.filter(p => p.trim());
+            if (validPrizes.length < 2) {
+                if (typeof showToast === 'function') showToast('至少需要 2 个有效选项才能分享', 'error');
+                return;
+            }
+            try {
+                const response = await fetch('/game/share', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ data: JSON.stringify(validPrizes) })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    const url = window.location.origin + '/g/' + result.share_id;
+                    navigator.clipboard.writeText(url).then(() => {
+                        if (typeof showToast === 'function') showToast('转盘分享链接已复制', 'success');
+                    });
+                } else {
+                    if (typeof showToast === 'function') showToast(result.message, 'error');
+                }
+            } catch (err) {
+                if (typeof showToast === 'function') showToast('分享失败', 'error');
+            }
+        });
+    }
+
+    // --- Init ---
+    prizes = loadOptions();
+    renderOptionsList();
+    drawWheel();
+</script>
+{% endblock %}

@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}回收站 - NexFile{% endblock %}
+
+{% block content %}
+<div class="glass-panel">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <h2 style="margin: 0;"><i class="fa-solid fa-trash-can"></i> 回收站</h2>
+        <div style="display: flex; gap: 0.75rem;">
+            <button onclick="clearTrash()" class="btn btn-danger" style="width: auto;"><i class="fa-solid fa-fire"></i> 清空回收站</button>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>文件名</th>
+                    <th>原始位置 / 类型</th>
+                    <th>删除时间</th>
+                    <th style="min-width: 150px;">操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr id="row-{{ item.filename }}">
+                    <td>
+                        <i class="fa-solid {{ 'fa-file' if item.type == 'file' else 'fa-book' }}" style="color: var(--text-muted); margin-right: 0.75rem;"></i>
+                        {{ item.original_name }}
+                    </td>
+                    <td style="color: var(--text-muted); font-size: 0.85rem;">
+                        {{ '文件' if item.type == 'file' else '笔记' }}
+                    </td>
+                    <td>{{ item.deleted_at }}</td>
+                    <td class="actions">
+                        <button onclick="restoreItem('{{ item.filename }}')" class="btn btn-sm btn-outline" style="color: var(--success);" title="还原"><i class="fa-solid fa-rotate-left"></i> 还原</button>
+                        <button onclick="permDelete('{{ item.filename }}')" class="btn btn-sm btn-danger" title="彻底删除"><i class="fa-solid fa-xmark"></i></button>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 2rem;">回收站是空的。</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    async function restoreItem(filename) {
+        try {
+            const response = await fetch(`/trash/restore/${encodeURIComponent(filename)}`, { method: 'POST' });
+            const result = await response.json();
+            if(result.success) {
+                showToast(result.message, 'success');
+                document.getElementById(`row-${filename}`).remove();
+                if (document.querySelectorAll('tbody tr:not(:last-child)').length === 0 && document.querySelectorAll('tbody tr').length === 1) {
+                    location.reload();
+                }
+            } else {
+                showToast(result.message, 'error');
+            }
+        } catch (err) {
+            showToast("还原失败", 'error');
+        }
+    }
+
+    async function permDelete(filename) {
+        if(!confirm("确定要永久删除此项目吗？该操作不可撤销。")) return;
+        try {
+            const response = await fetch(`/trash/delete/${encodeURIComponent(filename)}`, { method: 'POST' });
+            const result = await response.json();
+            if(result.success) {
+                showToast(result.message, 'success');
+                document.getElementById(`row-${filename}`).remove();
+            } else {
+                showToast(result.message, 'error');
+            }
+        } catch (err) {
+            showToast("删除失败", 'error');
+        }
+    }
+
+    async function clearTrash() {
+        if(!confirm("确定要清空回收站中所有文件和笔记吗？该操作不可撤销。")) return;
+        try {
+            const response = await fetch('/trash/clear', { method: 'POST' });
+            const result = await response.json();
+            if(result.success) {
+                showToast(result.message, 'success');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showToast(result.message, 'error');
+            }
+        } catch (err) {
+            showToast("清空失败", 'error');
+        }
+    }
+</script>
+{% endblock %}

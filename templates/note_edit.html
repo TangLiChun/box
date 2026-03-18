@@ -1,0 +1,249 @@
+{% extends "base.html" %}
+
+{% block title %}{{ '编辑笔记' if is_edit else '新建笔记' }} - NexFile{% endblock %}
+
+{% block extra_head %}
+<!-- Highlight.js for code blocks -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/atom-one-dark.min.css">
+<style>
+    .editor-container {
+        display: flex;
+        gap: 1.5rem;
+        height: calc(100vh - 280px);
+        min-height: 400px;
+    }
+    
+    .editor-pane, .preview-pane {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 8px;
+        border: 1px solid var(--border-default);
+        padding: 1rem;
+        min-height: 0;
+    }
+
+    .preview-pane {
+        overflow-y: auto;
+    }
+
+    [data-theme='light'] .editor-pane, 
+    [data-theme='light'] .preview-pane {
+        background: rgba(255, 255, 255, 0.4);
+    }
+
+    .content-textarea {
+        width: 100%;
+        flex-grow: 1;
+        background: transparent;
+        border: 1px solid var(--border-default);
+        border-radius: 8px;
+        color: var(--text-primary);
+        padding: 1rem;
+        font-family: 'Consolas', 'Monaco', monospace;
+        font-size: 1rem;
+        resize: none;
+        outline: none;
+        line-height: 1.6;
+        transition: border-color 0.3s ease;
+    }
+    .content-textarea:focus {
+        border-color: var(--accent);
+    }
+    .title-input {
+        width: 100%;
+        border: 1px solid var(--accent);
+        background: rgba(0,0,0,0.1);
+        font-size: 1.2rem;
+        font-weight: bold;
+        color: var(--text-primary);
+        padding: 0.75rem 1rem;
+        border-radius: 8px;
+        outline: none;
+    }
+
+    .editor-toolbar {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 0.75rem;
+    }
+    .toolbar-btn {
+        background: rgba(255,255,255,0.05);
+        border: 1px solid var(--border-default);
+        color: var(--text-muted);
+        padding: 0.4rem 0.7rem;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .toolbar-btn:hover {
+        background: var(--accent);
+        color: white;
+    }
+
+    .markdown-body h1, .markdown-body h2, .markdown-body h3 { border-bottom: 1px solid var(--border-default); padding-bottom: 0.5rem; margin-top: 1.5rem; color: var(--accent); }
+    .markdown-body pre { background: #1e293b; padding: 1rem; border-radius: 8px; }
+    .markdown-body blockquote { border-left: 4px solid var(--accent); padding-left: 1rem; color: var(--text-muted); }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Page Actions & Title -->
+<div class="glass-panel" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding: 1rem 1.5rem;">
+    <div style="display: flex; align-items: center; gap: 1rem;">
+        <h2 style="margin: 0;"><i class="fa-solid fa-{{ 'pen' if is_edit else 'plus' }}"></i> {{ '编辑笔记' if is_edit else '新建笔记' }}</h2>
+        <div id="save-status" title="状态" style="width: 10px; height: 10px; border-radius: 50%; background: var(--success);"></div>
+        <span id="dirty-msg" style="color: var(--warning); font-size: 0.8rem; opacity: 0;"><i class="fa-solid fa-circle-exclamation"></i> 未保存</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 10px;">
+        <button type="submit" form="noteForm" class="btn btn-primary btn-sm" id="saveBtn"><i class="fa-solid fa-floppy-disk"></i> 保存</button>
+        <a href="{{ url_for('main.notes') }}" class="btn btn-outline btn-sm"><i class="fa-solid fa-xmark"></i> 取消</a>
+    </div>
+</div>
+
+<form action="{{ url_for('main.edit_note', filename=original_filename) if is_edit else url_for('main.create_note') }}" method="post" id="noteForm" style="display: flex; flex-direction: column; gap: 1rem; flex-grow: 1;">
+    <div class="glass-panel" style="padding: 1rem;">
+        <input type="text" id="title" name="title" class="title-input" required 
+               value="{{ title if is_edit else '' }}"
+               placeholder="输入目录/标题 (例如: 学习/Python笔记)...">
+    </div>
+    
+    <div class="editor-container">
+        <div class="editor-pane">
+            <div class="editor-toolbar">
+                <button type="button" class="toolbar-btn" onclick="insertTag('**', '**')" title="粗体"><i class="fa-solid fa-bold"></i></button>
+                <button type="button" class="toolbar-btn" onclick="insertTag('*', '*')" title="斜体"><i class="fa-solid fa-italic"></i></button>
+                <button type="button" class="toolbar-btn" onclick="insertTag('# ', '')" title="标题"><i class="fa-solid fa-heading"></i></button>
+                <button type="button" class="toolbar-btn" onclick="insertTag('```\n', '\n```')" title="代码块"><i class="fa-solid fa-code"></i></button>
+            </div>
+            <textarea id="noteContent" name="content" class="content-textarea" required 
+                      placeholder="支持 Markdown 语法..." oninput="updatePreview(); setDirty(true)">{{ content if is_edit else '' }}</textarea>
+        </div>
+        
+        <div class="preview-pane">
+            <div id="preview-content" class="markdown-body">
+                <!-- Preview will render here -->
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.3.0/marked.min.js"></script>
+<script>
+    marked.setOptions({
+        highlight: function(code, lang) {
+            const language = hljs.getLanguage(lang) ? lang : 'plaintext';
+            return hljs.highlight(code, { language }).value;
+        },
+        breaks: true,
+        gfm: true
+    });
+
+    const noteContentTextarea = document.getElementById('noteContent');
+    const titleInput = document.getElementById('title');
+    const preview = document.getElementById('preview-content');
+    const form = document.getElementById('noteForm');
+    const saveButton = document.getElementById('saveBtn');
+    const saveStatus = document.getElementById('save-status');
+    const dirtyMsg = document.getElementById('dirty-msg');
+    
+    let isDirty = false;
+
+    function setDirty(dirty) {
+        isDirty = dirty;
+        saveStatus.style.background = dirty ? 'var(--warning)' : 'var(--success)';
+        dirtyMsg.style.opacity = dirty ? '1' : '0';
+    }
+
+    function updatePreview() {
+        preview.innerHTML = marked.parse(noteContentTextarea.value);
+    }
+    
+    noteContentTextarea.addEventListener('input', updatePreview);
+    titleInput.addEventListener('input', () => setDirty(true));
+    
+    // Initial render
+    preview.innerHTML = marked.parse(noteContentTextarea.value);
+    setDirty(false);
+    
+    // Handle tab
+    noteContentTextarea.addEventListener('keydown', function(e) {
+      if (e.key == 'Tab') {
+        e.preventDefault();
+        var start = this.selectionStart;
+        var end = this.selectionEnd;
+        this.value = this.value.substring(0, start) + "    " + this.value.substring(end);
+        this.selectionStart = this.selectionEnd = start + 4;
+      }
+    });
+
+    // Ctrl+S
+    document.addEventListener('keydown', function(e) {
+        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+            e.preventDefault();
+            saveNoteAjax();
+        }
+    });
+
+    function insertTag(startTag, endTag) {
+        const textarea = noteContentTextarea;
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const text = textarea.value;
+        textarea.value = text.substring(0, start) + startTag + text.substring(start, end) + endTag + text.substring(end);
+        textarea.focus();
+        const newPos = start + startTag.length + (end-start) + (end === start ? 0 : endTag.length);
+        textarea.setSelectionRange(newPos, newPos);
+        updatePreview();
+        setDirty(true);
+    }
+
+    async function saveNoteAjax() {
+        const title = titleInput.value.trim();
+        if (!title) { showToast("标题不能为空", "error"); return; }
+
+        saveButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 保存中';
+        saveButton.disabled = true;
+
+        const formData = new FormData(form);
+        const url = form.getAttribute('action');
+        
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                body: formData,
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+
+            if (response.ok) {
+                const result = await response.json(); 
+                if (result.success) {
+                    showToast('笔记已保存', 'success');
+                    setDirty(false);
+                    if (result.redirect && !window.location.href.includes(result.redirect)) {
+                        setTimeout(() => { window.location.href = result.redirect; }, 500);
+                    }
+                } else {
+                    showToast(result.message || '保存失败', 'error');
+                }
+            } else {
+                showToast('保存失败', 'error');
+            }
+        } catch (error) {
+            showToast('网络错误', 'error');
+        } finally {
+            saveButton.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> 保存';
+            saveButton.disabled = false;
+        }
+    }
+
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        saveNoteAjax();
+    });
+</script>
+{% endblock %}
