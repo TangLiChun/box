@@ -119,13 +119,36 @@ It is now roughly:
 - `nexfile/*`: feature modules and service modules
 - `main_bp`: thin route registration
 
+## UI / UX Status
+
+- the app now has a much more unified visual system across the main authenticated experience
+- `static/style.css` was expanded to include page-level hero layouts, stat cards, toolbar cards, section headers, empty states, utility pills, improved responsive behavior, and stronger interaction feedback
+- the following pages were significantly upgraded to the same visual language:
+  - file management
+  - notes list
+  - note edit
+  - note view
+  - trash
+  - admin
+  - login
+  - lucky wheel
+  - shared note view
+  - ONLYOFFICE editor shell
+- mobile navigation now uses a toggle + backdrop pattern instead of relying only on a collapsed desktop sidebar
+- toast behavior and mobile layout responsiveness were improved
+- keyboard focus visibility was strengthened with `:focus-visible` styling for interactive controls
+
+Current frontend reality:
+- the product now feels much more cohesive, but there are still many inline styles inside templates that could be extracted into reusable classes over time
+- visual polish is now strongest on the primary flows; future refinement can focus on reducing inline styling and improving animation consistency
+
 ## Git / Repo Status
 
 - the local directory is now initialized as a Git repository
 - GitHub remote is configured for `git@github.com:TangLiChun/box.git`
 - SSH auth was set up using `~/.ssh/id_ed25519_github` with an entry in `~/.ssh/config`
 - local work was merged with the existing remote `main` history using a merge commit
-- current remote-tracking `main` includes the pushed merge commit `deac619`
+- current remote-tracking `main` now includes multiple follow-up UI and update-flow commits beyond the original merge setup
 - `.gitignore` now excludes `users.db` so runtime DB state is not committed by default
 
 ## Recommended Next Steps
@@ -161,6 +184,12 @@ It is now roughly:
 
 4. Split the large security/integration test file
    `test_security_and_trash.py` is still carrying multiple concerns and would benefit from a shared factory-first base plus smaller focused test modules.
+
+5. Extract repeated inline template styles
+   A lot of visual polish now exists, but many templates still carry inline `style="..."` fragments that should gradually move into named CSS classes for maintainability.
+
+6. Continue frontend micro-polish
+   Good next candidates are animation consistency, ONLYOFFICE/editor edge-case states, and reducing one-off component styling across templates.
 
 ## Things To Be Careful About
 
