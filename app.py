@@ -339,6 +339,7 @@ configure_main_blueprint(
     handle_update_status=handle_update_status,
     handle_view_note=handle_view_note,
     handle_view_trash=handle_view_trash,
+    inspect_incremental_update_status=inspect_incremental_update_status,
     is_admin_password_change_required=is_admin_password_change_required,
     is_authenticated=is_authenticated,
     is_valid_onlyoffice_callback_token=is_valid_onlyoffice_callback_token,
