@@ -2,12 +2,6 @@
 
 {% block title %}文件管理 - NexFile{% endblock %}
 
-{% block extra_head %}
-<style>
-    /* Specific styles for index page if any */
-</style>
-{% endblock %}
-
 {% block content %}
 <div class="page-shell">
     <section class="glass-panel page-hero">
@@ -47,23 +41,23 @@
 
     <section class="dropzone glass-panel" id="dropzone">
         <div class="dropzone-inner">
-            <i class="fa-solid fa-cloud-arrow-up" style="font-size: 3rem; color: var(--accent); margin-bottom: 1rem;"></i>
+            <i class="fa-solid fa-cloud-arrow-up dropzone-icon"></i>
             <h3>拖拽文件到这里，或者点击立即上传</h3>
             <p class="muted-note">支持批量上传，单个文件最大 100MB，上传完成后自动刷新列表。</p>
-            <div style="display: flex; justify-content: center; gap: 0.75rem; flex-wrap: wrap; margin-top: 1rem;">
+            <div class="utility-pill-group">
                 <span class="utility-pill"><i class="fa-solid fa-layer-group"></i> 批量处理</span>
                 <span class="utility-pill"><i class="fa-solid fa-link"></i> 上传后可立即分享</span>
                 <span class="utility-pill"><i class="fa-solid fa-shield"></i> 路径与文件名安全校验</span>
             </div>
-            <input type="file" id="fileInput" multiple style="display: none;">
+            <input type="file" id="fileInput" class="visually-hidden-input" multiple>
         </div>
-        <div id="uploadProgressContainer" style="display: none; margin-top: 1.5rem;">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.9rem;">
+        <div id="uploadProgressContainer" class="upload-progress">
+            <div class="upload-progress-head">
                 <span id="uploadStatus">准备上传...</span>
                 <span id="uploadPercent">0%</span>
             </div>
-            <div style="height: 6px; background: var(--bg-subtle); border-radius: 3px; overflow: hidden;">
-                <div id="uploadProgressBar" style="width: 0%; height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-light)); transition: width 0.3s;"></div>
+            <div class="upload-progress-track">
+                <div id="uploadProgressBar" class="upload-progress-bar"></div>
             </div>
         </div>
     </section>
@@ -77,7 +71,7 @@
             <div class="search-container">
                 <i class="fa-solid fa-search search-icon"></i>
                 <input type="text" id="fileSearch" class="search-input" placeholder="搜索文件名、扩展名或关键词...">
-                <button id="clearSearch" class="clear-search-btn" style="display: none;"><i class="fa-solid fa-xmark"></i></button>
+                <button id="clearSearch" class="clear-search-btn hidden-inline"><i class="fa-solid fa-xmark"></i></button>
             </div>
         </div>
         <div class="toolbar-cluster">
@@ -101,10 +95,10 @@
             <table id="fileTable">
                 <thead>
                     <tr>
-                        <th onclick="sortTable(0)" style="cursor: pointer;" title="点击排序"><i class="fa-solid fa-sort"></i> 文件名</th>
-                        <th onclick="sortTable(1)" style="cursor: pointer;" title="点击排序"><i class="fa-solid fa-sort"></i> 大小</th>
-                        <th onclick="sortTable(2)" style="cursor: pointer;" title="点击排序"><i class="fa-solid fa-sort"></i> 修改时间</th>
-                        <th style="min-width: 150px;">操作</th>
+                        <th onclick="sortTable(0)" class="sort-trigger" title="点击排序"><i class="fa-solid fa-sort"></i> 文件名</th>
+                        <th onclick="sortTable(1)" class="sort-trigger" title="点击排序"><i class="fa-solid fa-sort"></i> 大小</th>
+                        <th onclick="sortTable(2)" class="sort-trigger" title="点击排序"><i class="fa-solid fa-sort"></i> 修改时间</th>
+                        <th class="min-col-actions">操作</th>
                     </tr>
                 </thead>
                 <tbody id="fileTableBody">
@@ -119,7 +113,7 @@
                         <td class="actions">
                             <button onclick="analyzeFile('{{ file.name }}')" class="btn btn-sm btn-outline" title="分析"><i class="fa-solid fa-microscope"></i></button>
                             {% if onlyoffice_url and file.name.split('.')[-1].lower() in office_extensions %}
-                                <a href="{{ url_for('main.onlyoffice_editor', filename=file.name) }}" class="btn btn-sm btn-outline" style="color: var(--accent);" title="编辑" target="_blank"><i class="fa-solid fa-pen-to-square"></i></a>
+                                <a href="{{ url_for('main.onlyoffice_editor', filename=file.name) }}" class="btn btn-sm btn-outline btn-accent" title="编辑" target="_blank"><i class="fa-solid fa-pen-to-square"></i></a>
                             {% endif %}
                             <button onclick='shareItem("file", {{ file.name|tojson }}, this)' class="btn btn-sm btn-outline" title="分享"><i class="fa-solid fa-share-nodes"></i></button>
                             <button onclick="deleteFile('{{ file.name }}')" class="btn btn-sm btn-danger" title="删除"><i class="fa-solid fa-trash-can"></i></button>
@@ -140,11 +134,11 @@
             </table>
         </div>
 
-        <div id="gridView" class="file-grid" style="display: none;">
+        <div id="gridView" class="file-grid hidden-inline">
             {% for file in files %}
             <div class="file-card" id="card-{{ file.name }}" data-name="{{ file.name }}">
                 <div class="file-card-preview" onclick="analyzeFile('{{ file.name }}')">
-                    <i class="{{ file.icon }}" style="font-size: 3.5rem; color: var(--accent);"></i>
+                    <i class="{{ file.icon }} file-card-icon"></i>
                 </div>
                 <div class="file-card-info">
                     <div class="file-card-name">{{ file.name }}</div>
@@ -153,14 +147,14 @@
                 <div class="file-card-actions">
                     <button class="card-action-btn" onclick="analyzeFile('{{ file.name }}')" title="分析"><i class="fa-solid fa-microscope"></i></button>
                     {% if onlyoffice_url and file.name.split('.')[-1].lower() in office_extensions %}
-                        <a href="{{ url_for('main.onlyoffice_editor', filename=file.name) }}" class="card-action-btn" style="color: var(--accent);" title="编辑" target="_blank"><i class="fa-solid fa-pen-to-square"></i></a>
+                        <a href="{{ url_for('main.onlyoffice_editor', filename=file.name) }}" class="card-action-btn btn-accent" title="编辑" target="_blank"><i class="fa-solid fa-pen-to-square"></i></a>
                     {% endif %}
                     <button class="card-action-btn" onclick='shareItem("file", {{ file.name|tojson }}, this)' title="分享"><i class="fa-solid fa-share-nodes"></i></button>
                     <button class="card-action-btn danger" onclick="deleteFile('{{ file.name }}')" title="删除"><i class="fa-solid fa-trash-can"></i></button>
                 </div>
             </div>
             {% else %}
-            <div class="empty-state glass-panel" style="grid-column: 1 / -1;">
+            <div class="empty-state glass-panel empty-grid-span">
                 <i class="fa-solid fa-box-open"></i>
                 <strong>网格视图里也暂时是空的</strong>
                 <span>上传几份文件之后，这里会很适合快速浏览与挑选。</span>
@@ -172,7 +166,7 @@
     <div class="modal-overlay" id="analysisModal">
         <div class="modal glass-panel">
             <div class="modal-header">
-                <h3><i class="fa-solid fa-chart-pie"></i> 文件分析报告: <span id="targetFileName" style="color: var(--accent);"></span></h3>
+                <h3><i class="fa-solid fa-chart-pie"></i> 文件分析报告: <span id="targetFileName" class="modal-title-accent"></span></h3>
                 <button class="close-btn" onclick="closeModal()">&times;</button>
             </div>
             <div id="analysisContent" class="analysis-grid">
@@ -184,6 +178,34 @@
 
 {% block scripts %}
 <script>
+    function escapeHtml(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function createAnalysisItem(label, value, extraClass = '') {
+        const className = ['analysis-item', extraClass].filter(Boolean).join(' ');
+        return `
+            <div class="${className}">
+                <label>${escapeHtml(label)}</label>
+                <div class="value">${escapeHtml(value)}</div>
+            </div>
+        `;
+    }
+
+    function renderAnalysisState(content, message, danger = false) {
+        content.className = 'analysis-grid analysis-grid-single';
+        content.innerHTML = `
+            <div class="state-panel${danger ? ' state-panel-danger' : ''}">
+                <div class="state-panel-copy">${message}</div>
+            </div>
+        `;
+    }
+
     // Helper to get file icons
     function getFileIcon(filename) {
         const ext = filename.split('.').pop().toLowerCase();
@@ -339,7 +361,8 @@
         const title = document.getElementById('targetFileName');
         
         title.innerText = filename;
-        content.innerHTML = '<div class="state-panel"><i class="fa-solid fa-spinner fa-spin state-spinner"></i><p class="state-caption">深度分析中精度...</p></div>';
+        content.className = 'analysis-grid analysis-grid-single';
+        content.innerHTML = '<div class="state-panel"><i class="fa-solid fa-spinner fa-spin state-spinner"></i><p class="state-caption">正在生成文件分析报告...</p></div>';
         modal.classList.add('active');
 
         try {
@@ -347,24 +370,31 @@
             const data = await response.json();
             
             if (data.error) {
-                content.innerHTML = `<div class="state-panel state-panel-danger">${data.error}</div>`;
+                renderAnalysisState(content, escapeHtml(data.error), true);
                 return;
             }
 
+            content.className = 'analysis-grid';
             content.innerHTML = `
-                <div class="analysis-item"><label>文件类型</label><div class="value">${data.type}</div></div>
-                <div class="analysis-item"><label>MIME 类型</label><div class="value">${data.mime}</div></div>
-                <div class="analysis-item"><label>文件大小</label><div class="value">${data.size}</div></div>
-                <div class="analysis-item"><label>MD5 哈希</label><div class="value value-compact">${data.md5}</div></div>
-                <div class="analysis-item"><label>SHA256 哈希</label><div class="value value-compact">${data.sha256}</div></div>
-                <div class="analysis-item"><label>熵值 (随机性)</label><div class="value">${data.entropy}</div></div>
-                <div class="hex-preview">
+                ${createAnalysisItem('文件类型', data.type)}
+                ${createAnalysisItem('MIME 类型', data.mime)}
+                ${createAnalysisItem('文件大小', data.size)}
+                <div class="analysis-item">
+                    <label>MD5 哈希</label>
+                    <div class="value value-compact"><code>${escapeHtml(data.md5)}</code></div>
+                </div>
+                <div class="analysis-item">
+                    <label>SHA256 哈希</label>
+                    <div class="value value-compact"><code>${escapeHtml(data.sha256)}</code></div>
+                </div>
+                ${createAnalysisItem('熵值 (随机性)', data.entropy)}
+                <div class="hex-preview analysis-item-wide">
                     <div class="hex-preview-label">十六进制头 (前16字节)</div>
-                    <code>${data.hex_header}</code>
+                    <code>${escapeHtml(data.hex_header)}</code>
                 </div>
             `;
         } catch (err) {
-            content.innerHTML = '<div class="state-panel state-panel-danger">获取分析数据失败</div>';
+            renderAnalysisState(content, '获取分析数据失败', true);
         }
     }
 
