@@ -190,28 +190,62 @@
 {% endblock %}
 
 {% block content %}
-<div class="glass-panel" style="max-width: 1050px; margin: 0 auto;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-        <h2 style="margin: 0;"><i class="fa-solid fa-dharmachakra"></i> 幸运转盘</h2>
-        {% if not is_public %}
-        <button id="shareGameBtn" class="btn btn-primary" style="width: auto;"><i class="fa-solid fa-share-nodes"></i> 分享转盘</button>
-        {% endif %}
-    </div>
-
-    <div class="game-layout">
-        <div class="wheel-section">
-            <div class="wheel-container">
-                <div class="pointer"></div>
-                <canvas id="wheelCanvas" width="720" height="720"></canvas>
-                <button id="spinBtn" class="spin-btn">SPIN</button>
+<div class="page-shell" style="max-width: 1120px; margin: 0 auto;">
+    <section class="glass-panel page-hero">
+        <div class="page-hero-top">
+            <div>
+                <div class="page-eyebrow"><i class="fa-solid fa-dharmachakra"></i> Wheel Studio</div>
+                <h1 class="page-title gradient-text">幸运转盘也可以像一个小型互动舞台</h1>
+                <p class="page-subtitle">一边维护选项，一边即时开转。更强调“结果反馈”和“临场感”，也更适合拿来做共享活动或临时抽签。</p>
             </div>
-            <div id="resultMessage"></div>
+            <div class="hero-actions">
+                {% if not is_public %}
+                <button id="shareGameBtn" class="btn btn-primary" style="width: auto;"><i class="fa-solid fa-share-nodes"></i> 分享转盘</button>
+                {% endif %}
+                <button type="button" class="btn btn-ghost" style="width: auto;" onclick="document.getElementById('spinBtn').click()"><i class="fa-solid fa-bolt"></i> 立即开转</button>
+            </div>
         </div>
+        <div class="stat-grid" style="margin-top: 1.5rem;">
+            <div class="stat-card">
+                <div class="stat-label">当前模式</div>
+                <div class="stat-value">{% if is_public %}公开访问{% else %}编辑模式{% endif %}</div>
+                <div class="stat-hint">{% if is_public %}仅展示和抽取，不能改选项{% else %}支持本地保存与批量编辑选项{% endif %}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">互动感</div>
+                <div class="stat-value">即时抽取</div>
+                <div class="stat-hint">转盘、结果和选项管理集中在同一页</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">适用场景</div>
+                <div class="stat-value">抽签 / 决策 / 活动</div>
+                <div class="stat-hint">一页内完成配置、分享和抽取</div>
+            </div>
+        </div>
+    </section>
 
-        {% if not is_public %}
-        <div class="options-section">
-            <div class="glass-panel" style="padding: 1.2rem;">
-                <h3 style="margin: 0 0 1rem 0; font-size: 1rem;"><i class="fa-solid fa-list-check"></i> 转盘选项</h3>
+    <section class="glass-panel surface-card">
+        <div class="game-layout">
+            <div class="wheel-section">
+                <div class="wheel-container">
+                    <div class="pointer"></div>
+                    <canvas id="wheelCanvas" width="720" height="720"></canvas>
+                    <button id="spinBtn" class="spin-btn">SPIN</button>
+                </div>
+                <div id="resultMessage"></div>
+            </div>
+
+            {% if not is_public %}
+            <div class="options-section">
+                <div class="section-head" style="margin-bottom: 1rem;">
+                    <div class="section-title">
+                        <i class="fa-solid fa-list-check" style="color: var(--accent-light);"></i>
+                        <div>
+                            <h2>转盘选项</h2>
+                            <div class="section-kicker">支持单条编辑，也支持批量粘贴快速重建整套选项。</div>
+                        </div>
+                    </div>
+                </div>
                 <div id="optionsList"></div>
                 <button id="addOptionBtn" class="add-option-btn"><i class="fa-solid fa-plus"></i> 添加选项</button>
                 <div class="batch-area" id="batchArea">
@@ -227,15 +261,15 @@
                     <button id="resetOptionsBtn" class="btn" style="background: rgba(255, 255, 255, 0.04); width: auto;"><i class="fa-solid fa-rotate-left"></i> 重置</button>
                 </div>
             </div>
+            {% endif %}
+        </div>
+
+        {% if shared_data %}
+        <div style="text-align: center; color: var(--text-muted); margin-top: 1rem;">
+            <i class="fa-solid fa-info-circle"></i> 正在访问共享的转盘
         </div>
         {% endif %}
-    </div>
-
-    {% if shared_data %}
-    <div style="text-align: center; color: var(--text-muted); margin-top: 1rem;">
-        <i class="fa-solid fa-info-circle"></i> 正在访问共享的转盘
-    </div>
-    {% endif %}
+    </section>
 </div>
 {% endblock %}
 

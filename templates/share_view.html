@@ -90,19 +90,35 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <header class="glass-panel" style="margin-bottom: 2rem; justify-content: center;">
-            <h1 class="gradient-text" style="margin: 0;"><i class="fa-solid fa-layer-group"></i> NexFile 共享阅览</h1>
-        </header>
+    <div class="container" style="padding: 2rem 1.25rem 3rem;">
+        <div class="page-shell" style="max-width: 960px; margin: 0 auto;">
+            <section class="glass-panel page-hero">
+                <div class="page-hero-top">
+                    <div>
+                        <div class="page-eyebrow"><i class="fa-solid fa-share-nodes"></i> Shared Reading</div>
+                        <h1 class="page-title gradient-text">NexFile 共享阅览</h1>
+                        <p class="page-subtitle">这是一条公开分享的笔记链接。阅读视图保留了标题层次、代码高亮和引用样式，尽量让外部访问者也能获得清爽的阅读体验。</p>
+                    </div>
+                    <div class="hero-actions">
+                        <span class="public-badge">公开分享</span>
+                    </div>
+                </div>
+            </section>
 
-        <div class="glass-panel" style="max-width: 900px; margin: 0 auto;">
-            <h2 style="margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-default); padding-bottom: 1rem;">
-                <i class="fa-brands fa-markdown" style="color: var(--accent);"></i> {{ title }} <span class="public-badge">公开分享</span>
-            </h2>
-            
-            <div class="markdown-body">
-                {{ content | safe }}
-            </div>
+            <section class="glass-panel surface-card">
+                <div class="section-head">
+                    <div class="section-title">
+                        <i class="fa-brands fa-markdown" style="color: var(--accent-light);"></i>
+                        <div>
+                            <h2>{{ title }}</h2>
+                            <div class="section-kicker">公开笔记内容</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="markdown-body">
+                    {{ content | safe }}
+                </div>
+            </section>
         </div>
     </div>
 </body>
