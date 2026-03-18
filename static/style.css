@@ -1450,6 +1450,46 @@ header h2 {
     font-weight: 600;
 }
 
+.btn-auto {
+    width: auto;
+}
+
+.count-strong {
+    color: var(--text-primary);
+    font-weight: 700;
+}
+
+.surface-card-flush {
+    padding: 0;
+}
+
+.section-head-padded {
+    padding: 1.2rem 1.2rem 0;
+}
+
+.stat-grid-top {
+    margin-top: 1.5rem;
+}
+
+.section-icon-accent {
+    color: var(--accent-light);
+}
+
+.muted-note {
+    color: var(--text-muted);
+}
+
+.muted-note-sm {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+.empty-cell-text {
+    text-align: center;
+    color: #94a3b8;
+    padding: 2rem;
+}
+
 .section-head {
     display: flex;
     justify-content: space-between;

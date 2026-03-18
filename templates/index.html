@@ -18,15 +18,15 @@
                 <p class="page-subtitle">上传区、搜索、视图切换和操作按钮现在被整理成一条更自然的工作流，适合快速处理，也适合长时间维护资料库。</p>
             </div>
             <div class="hero-actions">
-                <label for="fileInput" class="btn btn-primary" style="width: auto;">
+                <label for="fileInput" class="btn btn-primary btn-auto">
                     <i class="fa-solid fa-plus"></i> 上传文件
                 </label>
-                <button type="button" class="btn btn-ghost" style="width: auto;" onclick="document.getElementById('fileSearch').focus()">
+                <button type="button" class="btn btn-ghost btn-auto" onclick="document.getElementById('fileSearch').focus()">
                     <i class="fa-solid fa-magnifying-glass"></i> 开始搜索
                 </button>
             </div>
         </div>
-        <div class="stat-grid" style="margin-top: 1.5rem;">
+        <div class="stat-grid stat-grid-top">
             <div class="stat-card">
                 <div class="stat-label">当前文件数</div>
                 <div class="stat-value" id="heroFileCount">{{ files|length }}</div>
@@ -49,7 +49,7 @@
         <div class="dropzone-inner">
             <i class="fa-solid fa-cloud-arrow-up" style="font-size: 3rem; color: var(--accent); margin-bottom: 1rem;"></i>
             <h3>拖拽文件到这里，或者点击立即上传</h3>
-            <p style="color: var(--text-muted);">支持批量上传，单个文件最大 100MB，上传完成后自动刷新列表。</p>
+            <p class="muted-note">支持批量上传，单个文件最大 100MB，上传完成后自动刷新列表。</p>
             <div style="display: flex; justify-content: center; gap: 0.75rem; flex-wrap: wrap; margin-top: 1rem;">
                 <span class="utility-pill"><i class="fa-solid fa-layer-group"></i> 批量处理</span>
                 <span class="utility-pill"><i class="fa-solid fa-link"></i> 上传后可立即分享</span>
@@ -81,15 +81,15 @@
             </div>
         </div>
         <div class="toolbar-cluster">
-            <span class="utility-pill"><i class="fa-solid fa-files"></i> 共 <span id="fileCount" style="color: var(--text-primary); font-weight: 700;">{{ files|length }}</span> 个文件</span>
+            <span class="utility-pill"><i class="fa-solid fa-files"></i> 共 <span id="fileCount" class="count-strong">{{ files|length }}</span> 个文件</span>
             <span class="utility-pill"><i class="fa-solid fa-table-cells-large"></i> 视图偏好自动记忆</span>
         </div>
     </section>
 
-    <section class="glass-panel surface-card" style="padding: 0;">
-        <div class="section-head" style="padding: 1.2rem 1.2rem 0;">
+    <section class="glass-panel surface-card surface-card-flush">
+        <div class="section-head section-head-padded">
             <div class="section-title">
-                <i class="fa-solid fa-folder-open" style="color: var(--accent-light);"></i>
+                <i class="fa-solid fa-folder-open section-icon-accent"></i>
                 <div>
                     <h2>文件库</h2>
                     <div class="section-kicker">列表更适合管理，网格更适合扫览与定位。</div>

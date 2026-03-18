@@ -12,11 +12,11 @@
                 <p class="page-subtitle">把搜索、新建、查看、编辑和分享整理到更聚焦的布局里。你能更快找到想改的内容，也更容易把一条笔记发给别人。</p>
             </div>
             <div class="hero-actions">
-                <a href="{{ url_for('main.create_note') }}" class="btn btn-primary" style="width: auto; white-space: nowrap;"><i class="fa-solid fa-plus"></i> 新建笔记</a>
-                <button type="button" class="btn btn-ghost" style="width: auto;" onclick="document.getElementById('noteSearch').focus()"><i class="fa-solid fa-magnifying-glass"></i> 搜索笔记</button>
+                <a href="{{ url_for('main.create_note') }}" class="btn btn-primary btn-auto" style="white-space: nowrap;"><i class="fa-solid fa-plus"></i> 新建笔记</a>
+                <button type="button" class="btn btn-ghost btn-auto" onclick="document.getElementById('noteSearch').focus()"><i class="fa-solid fa-magnifying-glass"></i> 搜索笔记</button>
             </div>
         </div>
-        <div class="stat-grid" style="margin-top: 1.5rem;">
+        <div class="stat-grid stat-grid-top">
             <div class="stat-card">
                 <div class="stat-label">笔记总数</div>
                 <div class="stat-value" id="noteHeroCount">{{ notes|length }}</div>
@@ -44,14 +44,14 @@
             </div>
         </div>
         <div class="toolbar-cluster">
-            <span class="utility-pill"><i class="fa-solid fa-book-open"></i> 当前显示 <span id="noteVisibleCount" style="color: var(--text-primary); font-weight: 700;">{{ notes|length }}</span> 篇</span>
+            <span class="utility-pill"><i class="fa-solid fa-book-open"></i> 当前显示 <span id="noteVisibleCount" class="count-strong">{{ notes|length }}</span> 篇</span>
         </div>
     </section>
 
-    <section class="glass-panel surface-card" style="padding: 0;">
-        <div class="section-head" style="padding: 1.2rem 1.2rem 0;">
+    <section class="glass-panel surface-card surface-card-flush">
+        <div class="section-head section-head-padded">
             <div class="section-title">
-                <i class="fa-brands fa-markdown" style="color: var(--accent-light);"></i>
+                <i class="fa-brands fa-markdown section-icon-accent"></i>
                 <div>
                     <h2>Markdown 笔记</h2>
                     <div class="section-kicker">适合沉淀知识，也适合快速写完就分享出去。</div>
