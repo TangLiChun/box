@@ -111,12 +111,12 @@
                         <td data-sort="{{ file.size_raw }}">{{ file.size }}</td>
                         <td>{{ file.modified }}</td>
                         <td class="actions">
-                            <button onclick="analyzeFile('{{ file.name }}')" class="btn btn-sm btn-outline" title="分析"><i class="fa-solid fa-microscope"></i></button>
+                            <button onclick='analyzeFile({{ file.name|tojson }})' class="btn btn-sm btn-outline" title="分析"><i class="fa-solid fa-microscope"></i></button>
                             {% if onlyoffice_url and file.name.split('.')[-1].lower() in office_extensions %}
                                 <a href="{{ url_for('main.onlyoffice_editor', filename=file.name) }}" class="btn btn-sm btn-outline btn-accent" title="编辑" target="_blank"><i class="fa-solid fa-pen-to-square"></i></a>
                             {% endif %}
                             <button onclick='shareItem("file", {{ file.name|tojson }}, this)' class="btn btn-sm btn-outline" title="分享"><i class="fa-solid fa-share-nodes"></i></button>
-                            <button onclick="deleteFile('{{ file.name }}')" class="btn btn-sm btn-danger" title="删除"><i class="fa-solid fa-trash-can"></i></button>
+                            <button onclick='deleteFile({{ file.name|tojson }})' class="btn btn-sm btn-danger" title="删除"><i class="fa-solid fa-trash-can"></i></button>
                         </td>
                     </tr>
                     {% else %}
@@ -137,7 +137,7 @@
         <div id="gridView" class="file-grid hidden-inline">
             {% for file in files %}
             <div class="file-card" id="card-{{ file.name }}" data-name="{{ file.name }}">
-                <div class="file-card-preview" onclick="analyzeFile('{{ file.name }}')">
+                <div class="file-card-preview" onclick='analyzeFile({{ file.name|tojson }})'>
                     <i class="{{ file.icon }} file-card-icon"></i>
                 </div>
                 <div class="file-card-info">
@@ -145,12 +145,12 @@
                     <div class="file-card-meta">{{ file.size }} · {{ file.modified }}</div>
                 </div>
                 <div class="file-card-actions">
-                    <button class="card-action-btn" onclick="analyzeFile('{{ file.name }}')" title="分析"><i class="fa-solid fa-microscope"></i></button>
+                    <button class="card-action-btn" onclick='analyzeFile({{ file.name|tojson }})' title="分析"><i class="fa-solid fa-microscope"></i></button>
                     {% if onlyoffice_url and file.name.split('.')[-1].lower() in office_extensions %}
                         <a href="{{ url_for('main.onlyoffice_editor', filename=file.name) }}" class="card-action-btn btn-accent" title="编辑" target="_blank"><i class="fa-solid fa-pen-to-square"></i></a>
                     {% endif %}
                     <button class="card-action-btn" onclick='shareItem("file", {{ file.name|tojson }}, this)' title="分享"><i class="fa-solid fa-share-nodes"></i></button>
-                    <button class="card-action-btn danger" onclick="deleteFile('{{ file.name }}')" title="删除"><i class="fa-solid fa-trash-can"></i></button>
+                    <button class="card-action-btn danger" onclick='deleteFile({{ file.name|tojson }})' title="删除"><i class="fa-solid fa-trash-can"></i></button>
                 </div>
             </div>
             {% else %}
