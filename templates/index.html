@@ -339,7 +339,7 @@
         const title = document.getElementById('targetFileName');
         
         title.innerText = filename;
-        content.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 2rem;"><i class="fa-solid fa-spinner fa-spin" style="font-size: 2rem; color: var(--accent);"></i><p style="margin-top: 1rem;">深度分析中精度...</p></div>';
+        content.innerHTML = '<div class="state-panel"><i class="fa-solid fa-spinner fa-spin state-spinner"></i><p class="state-caption">深度分析中精度...</p></div>';
         modal.classList.add('active');
 
         try {
@@ -347,7 +347,7 @@
             const data = await response.json();
             
             if (data.error) {
-                content.innerHTML = `<div style="grid-column: 1/-1; color: var(--danger); text-align: center;">${data.error}</div>`;
+                content.innerHTML = `<div class="state-panel state-panel-danger">${data.error}</div>`;
                 return;
             }
 
@@ -355,16 +355,16 @@
                 <div class="analysis-item"><label>文件类型</label><div class="value">${data.type}</div></div>
                 <div class="analysis-item"><label>MIME 类型</label><div class="value">${data.mime}</div></div>
                 <div class="analysis-item"><label>文件大小</label><div class="value">${data.size}</div></div>
-                <div class="analysis-item"><label>MD5 哈希</label><div class="value" style="font-size: 0.8rem;">${data.md5}</div></div>
-                <div class="analysis-item"><label>SHA256 哈希</label><div class="value" style="font-size: 0.8rem;">${data.sha256}</div></div>
+                <div class="analysis-item"><label>MD5 哈希</label><div class="value value-compact">${data.md5}</div></div>
+                <div class="analysis-item"><label>SHA256 哈希</label><div class="value value-compact">${data.sha256}</div></div>
                 <div class="analysis-item"><label>熵值 (随机性)</label><div class="value">${data.entropy}</div></div>
                 <div class="hex-preview">
-                    <div style="margin-bottom: 0.5rem; color: #94a3b8; font-size: 0.8rem; font-family: sans-serif;">十六进制头 (前16字节)</div>
+                    <div class="hex-preview-label">十六进制头 (前16字节)</div>
                     <code>${data.hex_header}</code>
                 </div>
             `;
         } catch (err) {
-            content.innerHTML = '<div style="grid-column: 1/-1; color: var(--danger); text-align: center;">获取分析数据失败</div>';
+            content.innerHTML = '<div class="state-panel state-panel-danger">获取分析数据失败</div>';
         }
     }
 

@@ -112,6 +112,8 @@
     const clearSearch = document.getElementById('clearSearch');
     const noteVisibleCount = document.getElementById('noteVisibleCount');
     const noteHeroCount = document.getElementById('noteHeroCount');
+    const emptyStateMarkup = '<td colspan="3" class="empty-cell-text">暂无笔记，点击上方“新建笔记”开始创作。</td>';
+    const noResultsMarkup = '<td colspan="3" class="empty-cell-text">没有找到匹配的笔记。</td>';
 
     function updateNoteCounts(count) {
         if (noteVisibleCount) noteVisibleCount.innerText = count;
@@ -142,16 +144,16 @@
                 if (!emptyRow) {
                     emptyRow = document.createElement('tr');
                     emptyRow.id = 'emptyRow';
-                    emptyRow.innerHTML = `<td colspan="3" style="text-align: center; color: #94a3b8; padding: 2rem;">没有找到匹配的笔记。</td>`;
+                    emptyRow.innerHTML = noResultsMarkup;
                     noteTableBody.appendChild(emptyRow);
                 } else {
                     emptyRow.style.display = '';
-                    emptyRow.innerHTML = `<td colspan="3" style="text-align: center; color: #94a3b8; padding: 2rem;">没有找到匹配的笔记。</td>`;
+                    emptyRow.innerHTML = noResultsMarkup;
                 }
             } else if (emptyRow) {
                 emptyRow.style.display = visibleCount === 0 && rows.length === 0 ? '' : 'none';
                 if (rows.length === 0) {
-                    emptyRow.innerHTML = '<td colspan="3" style="text-align: center; color: #94a3b8; padding: 2rem;">暂无笔记，点击上方“新建笔记”开始创作。</td>';
+                    emptyRow.innerHTML = emptyStateMarkup;
                 }
             }
         });
@@ -189,7 +191,7 @@
                          tbody.appendChild(emptyRow);
                     }
                     emptyRow.style.display = '';
-                    emptyRow.innerHTML = '<td colspan="3" style="text-align: center; color: #94a3b8; padding: 2rem;">暂无笔记，点击上方“新建笔记”开始创作。</td>';
+                    emptyRow.innerHTML = emptyStateMarkup;
                 }
             } else {
                 showToast(result.message, 'error');
