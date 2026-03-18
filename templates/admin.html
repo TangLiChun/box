@@ -234,21 +234,53 @@
         };
     }
 
+    function updateUserCount(delta = 0) {
+        const statValue = document.querySelector('.stat-card .stat-value');
+        if (!statValue) return;
+        const nextValue = Math.max(0, (parseInt(statValue.innerText, 10) || 0) + delta);
+        statValue.innerText = nextValue;
+    }
+
+    function appendUserRow(user) {
+        const tbody = document.querySelector('#userTable tbody');
+        if (!tbody || !user) return;
+        const row = document.createElement('tr');
+        row.id = `user-row-${user.id}`;
+        row.innerHTML = `
+            <td>${user.id}</td>
+            <td>
+                <span class="user-row-label">
+                    <i class="fa-solid fa-user user-row-icon"></i> ${escapeHtml(user.username)}
+                </span>
+            </td>
+            <td class="actions">
+                <button onclick='openPasswordModal(${user.id}, ${JSON.stringify(user.username)})' class="btn btn-sm btn-outline btn-accent" title="修改密码"><i class="fa-solid fa-key"></i> 修改密码</button>
+                <button onclick='deleteUser(${user.id}, ${JSON.stringify(user.username)})' class="btn btn-sm btn-danger" title="删除用户"><i class="fa-solid fa-user-xmark"></i> 删除</button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    }
+
     // Add User
     document.getElementById('addUserForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const formData = new FormData(e.target);
+        const restoreButton = setButtonLoading(e.target.querySelector('button[type="submit"]'), '添加中');
         try {
             const response = await fetch('/admin/users/add', { method: 'POST', body: formData });
             const result = await response.json();
             if(result.success) {
                 showToast(result.message, 'success');
-                setTimeout(() => location.reload(), 1500);
+                appendUserRow(result.user);
+                updateUserCount(1);
+                e.target.reset();
             } else {
                 showToast(result.message, 'error');
             }
         } catch(e) {
             showToast("网络请求错误", 'error');
+        } finally {
+            restoreButton();
         }
     });
 
@@ -261,6 +293,7 @@
                 if(result.success) {
                     showToast(result.message, 'success');
                     document.getElementById(`user-row-${id}`).remove();
+                    updateUserCount(-1);
                 } else {
                     showToast(result.message, 'error');
                 }

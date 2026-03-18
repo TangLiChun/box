@@ -314,6 +314,22 @@
         fileSearch.focus();
     });
 
+    document.addEventListener('keydown', (event) => {
+        if (event.defaultPrevented) return;
+        const target = event.target;
+        const typing = target && ['INPUT', 'TEXTAREA'].includes(target.tagName);
+        if (!typing && event.key === '/') {
+            event.preventDefault();
+            fileSearch.focus();
+            fileSearch.select();
+        }
+        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+            event.preventDefault();
+            fileSearch.focus();
+            fileSearch.select();
+        }
+    });
+
     // Upload Logic
     const dropzone = document.getElementById('dropzone');
     const fileInput = document.getElementById('fileInput');

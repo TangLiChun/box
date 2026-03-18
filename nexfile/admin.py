@@ -80,7 +80,15 @@ def handle_add_user(get_db):
         (username, generate_password_hash(password)),
     )
     db.commit()
-    return jsonify({'success': True, 'message': f'用户 {username} 添加成功'})
+    user_id = db.execute('SELECT id FROM users WHERE username = ?', (username,)).fetchone()['id']
+    return jsonify({
+        'success': True,
+        'message': f'用户 {username} 添加成功',
+        'user': {
+            'id': user_id,
+            'username': username,
+        },
+    })
 
 
 def handle_delete_user(user_id, get_db):

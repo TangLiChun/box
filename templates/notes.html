@@ -106,6 +106,21 @@
 
 {% block scripts %}
 <script>
+    function setButtonLoading(button, loadingText, idleHtml) {
+        if (!button) return () => {};
+        if (!button.dataset.idleHtml) {
+            button.dataset.idleHtml = idleHtml || button.innerHTML;
+        }
+        button.disabled = true;
+        button.classList.add('is-loading');
+        button.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${loadingText}`;
+        return () => {
+            button.disabled = false;
+            button.classList.remove('is-loading');
+            button.innerHTML = button.dataset.idleHtml;
+        };
+    }
+
     // Search Logic
     const noteSearch = document.getElementById('noteSearch');
     const noteTableBody = document.getElementById('noteTableBody');
@@ -166,6 +181,22 @@
             });
         }
     }
+
+    document.addEventListener('keydown', (event) => {
+        if (event.defaultPrevented) return;
+        const target = event.target;
+        const typing = target && ['INPUT', 'TEXTAREA'].includes(target.tagName);
+        if (!typing && event.key === '/') {
+            event.preventDefault();
+            noteSearch.focus();
+            noteSearch.select();
+        }
+        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+            event.preventDefault();
+            noteSearch.focus();
+            noteSearch.select();
+        }
+    });
 
     async function deleteNote(btn) {
         const filename = btn.getAttribute('data-filename');
@@ -240,6 +271,7 @@
     }
     
     async function shareItem(type, filename, btn) {
+        const restoreButton = setButtonLoading(btn, '生成中', btn.innerHTML);
         try {
             const response = await fetch('/share/create', { 
                 method: 'POST',
@@ -266,6 +298,8 @@
             }
         } catch(e) {
              showToast("网络请求错误", 'error');
+        } finally {
+            restoreButton();
         }
     }
     
