@@ -9,109 +9,174 @@
 {% endblock %}
 
 {% block content %}
-<!-- Upload Area -->
-<div class="dropzone glass-panel" id="dropzone" style="margin-bottom: 2rem;">
-    <div class="dropzone-inner">
-        <i class="fa-solid fa-cloud-arrow-up" style="font-size: 3rem; color: var(--accent); margin-bottom: 1rem;"></i>
-        <h3>拖拽文件至此 或 <span style="color: var(--accent); cursor: pointer;">浏览本地文件</span></h3>
-        <p style="color: var(--text-muted);">支持批量上传，单个文件最大 100MB</p>
-        <input type="file" id="fileInput" multiple style="display: none;">
-    </div>
-    <div id="uploadProgressContainer" style="display: none; margin-top: 1.5rem;">
-        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.9rem;">
-            <span id="uploadStatus">准备上传...</span>
-            <span id="uploadPercent">0%</span>
+<div class="page-shell">
+    <section class="glass-panel page-hero">
+        <div class="page-hero-top">
+            <div>
+                <div class="page-eyebrow"><i class="fa-solid fa-folder-tree"></i> File Workspace</div>
+                <h1 class="page-title gradient-text">文件整理、分享与编辑，压缩成一次顺手操作</h1>
+                <p class="page-subtitle">上传区、搜索、视图切换和操作按钮现在被整理成一条更自然的工作流，适合快速处理，也适合长时间维护资料库。</p>
+            </div>
+            <div class="hero-actions">
+                <label for="fileInput" class="btn btn-primary" style="width: auto;">
+                    <i class="fa-solid fa-plus"></i> 上传文件
+                </label>
+                <button type="button" class="btn btn-ghost" style="width: auto;" onclick="document.getElementById('fileSearch').focus()">
+                    <i class="fa-solid fa-magnifying-glass"></i> 开始搜索
+                </button>
+            </div>
         </div>
-        <div style="height: 6px; background: var(--bg-subtle); border-radius: 3px; overflow: hidden;">
-            <div id="uploadProgressBar" style="width: 0%; height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-light)); transition: width 0.3s;"></div>
+        <div class="stat-grid" style="margin-top: 1.5rem;">
+            <div class="stat-card">
+                <div class="stat-label">当前文件数</div>
+                <div class="stat-value" id="heroFileCount">{{ files|length }}</div>
+                <div class="stat-hint">列表和网格会同步过滤结果</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">上传能力</div>
+                <div class="stat-value">批量 / 拖拽</div>
+                <div class="stat-hint">支持多文件连续导入</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">在线协作</div>
+                <div class="stat-value">{% if onlyoffice_url %}ONLYOFFICE 已启用{% else %}分享与下载可用{% endif %}</div>
+                <div class="stat-hint">{% if onlyoffice_url %}Office 文档可直接进入编辑器{% else %}配置 ONLYOFFICE 后可获得在线编辑{% endif %}</div>
+            </div>
         </div>
-    </div>
-</div>
+    </section>
 
-<!-- View Controls & Search -->
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; gap: 1rem;">
-    <div style="display: flex; align-items: center; gap: 0.75rem;">
-        <div class="view-toggle">
-            <button class="view-btn active" id="listViewBtn" title="列表视图"><i class="fa-solid fa-list"></i></button>
-            <button class="view-btn" id="gridViewBtn" title="网格视图"><i class="fa-solid fa-grid-2"></i></button>
+    <section class="dropzone glass-panel" id="dropzone">
+        <div class="dropzone-inner">
+            <i class="fa-solid fa-cloud-arrow-up" style="font-size: 3rem; color: var(--accent); margin-bottom: 1rem;"></i>
+            <h3>拖拽文件到这里，或者点击立即上传</h3>
+            <p style="color: var(--text-muted);">支持批量上传，单个文件最大 100MB，上传完成后自动刷新列表。</p>
+            <div style="display: flex; justify-content: center; gap: 0.75rem; flex-wrap: wrap; margin-top: 1rem;">
+                <span class="utility-pill"><i class="fa-solid fa-layer-group"></i> 批量处理</span>
+                <span class="utility-pill"><i class="fa-solid fa-link"></i> 上传后可立即分享</span>
+                <span class="utility-pill"><i class="fa-solid fa-shield"></i> 路径与文件名安全校验</span>
+            </div>
+            <input type="file" id="fileInput" multiple style="display: none;">
         </div>
-        <div class="search-container">
-            <i class="fa-solid fa-search search-icon"></i>
-            <input type="text" id="fileSearch" class="search-input" placeholder="搜索文件...">
-            <button id="clearSearch" class="clear-search-btn" style="display: none;"><i class="fa-solid fa-xmark"></i></button>
+        <div id="uploadProgressContainer" style="display: none; margin-top: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.9rem;">
+                <span id="uploadStatus">准备上传...</span>
+                <span id="uploadPercent">0%</span>
+            </div>
+            <div style="height: 6px; background: var(--bg-subtle); border-radius: 3px; overflow: hidden;">
+                <div id="uploadProgressBar" style="width: 0%; height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-light)); transition: width 0.3s;"></div>
+            </div>
         </div>
-    </div>
-    <div style="color: var(--text-muted); font-size: 0.9rem;">
-        共 <span id="fileCount" style="color: var(--text-main); font-weight: 600;">{{ files|length }}</span> 个文件
-    </div>
-</div>
+    </section>
 
-<!-- List View -->
-<div id="listView" class="glass-panel table-responsive">
-    <table id="fileTable">
-        <thead>
-            <tr>
-                <th onclick="sortTable(0)" style="cursor: pointer;" title="点击排序"><i class="fa-solid fa-sort"></i> 文件名</th>
-                <th onclick="sortTable(1)" style="cursor: pointer;" title="点击排序"><i class="fa-solid fa-sort"></i> 大小</th>
-                <th onclick="sortTable(2)" style="cursor: pointer;" title="点击排序"><i class="fa-solid fa-sort"></i> 修改时间</th>
-                <th style="min-width: 150px;">操作</th>
-            </tr>
-        </thead>
-        <tbody id="fileTableBody">
+    <section class="glass-panel toolbar-card">
+        <div class="toolbar-cluster">
+            <div class="view-toggle">
+                <button class="view-btn active" id="listViewBtn" title="列表视图"><i class="fa-solid fa-list"></i></button>
+                <button class="view-btn" id="gridViewBtn" title="网格视图"><i class="fa-solid fa-grid-2"></i></button>
+            </div>
+            <div class="search-container">
+                <i class="fa-solid fa-search search-icon"></i>
+                <input type="text" id="fileSearch" class="search-input" placeholder="搜索文件名、扩展名或关键词...">
+                <button id="clearSearch" class="clear-search-btn" style="display: none;"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+        </div>
+        <div class="toolbar-cluster">
+            <span class="utility-pill"><i class="fa-solid fa-files"></i> 共 <span id="fileCount" style="color: var(--text-primary); font-weight: 700;">{{ files|length }}</span> 个文件</span>
+            <span class="utility-pill"><i class="fa-solid fa-table-cells-large"></i> 视图偏好自动记忆</span>
+        </div>
+    </section>
+
+    <section class="glass-panel surface-card" style="padding: 0;">
+        <div class="section-head" style="padding: 1.2rem 1.2rem 0;">
+            <div class="section-title">
+                <i class="fa-solid fa-folder-open" style="color: var(--accent-light);"></i>
+                <div>
+                    <h2>文件库</h2>
+                    <div class="section-kicker">列表更适合管理，网格更适合扫览与定位。</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="listView" class="table-responsive">
+            <table id="fileTable">
+                <thead>
+                    <tr>
+                        <th onclick="sortTable(0)" style="cursor: pointer;" title="点击排序"><i class="fa-solid fa-sort"></i> 文件名</th>
+                        <th onclick="sortTable(1)" style="cursor: pointer;" title="点击排序"><i class="fa-solid fa-sort"></i> 大小</th>
+                        <th onclick="sortTable(2)" style="cursor: pointer;" title="点击排序"><i class="fa-solid fa-sort"></i> 修改时间</th>
+                        <th style="min-width: 150px;">操作</th>
+                    </tr>
+                </thead>
+                <tbody id="fileTableBody">
+                    {% for file in files %}
+                    <tr id="row-{{ file.name }}">
+                        <td class="file-name-cell">
+                            <i class="{{ file.icon }} file-icon"></i>
+                            <a href="{{ url_for('main.download_file', filename=file.name) }}" class="file-link" title="{{ file.name }}">{{ file.name }}</a>
+                        </td>
+                        <td data-sort="{{ file.size_raw }}">{{ file.size }}</td>
+                        <td>{{ file.modified }}</td>
+                        <td class="actions">
+                            <button onclick="analyzeFile('{{ file.name }}')" class="btn btn-sm btn-outline" title="分析"><i class="fa-solid fa-microscope"></i></button>
+                            {% if onlyoffice_url and file.name.split('.')[-1].lower() in office_extensions %}
+                                <a href="{{ url_for('main.onlyoffice_editor', filename=file.name) }}" class="btn btn-sm btn-outline" style="color: var(--accent);" title="编辑" target="_blank"><i class="fa-solid fa-pen-to-square"></i></a>
+                            {% endif %}
+                            <button onclick='shareItem("file", {{ file.name|tojson }}, this)' class="btn btn-sm btn-outline" title="分享"><i class="fa-solid fa-share-nodes"></i></button>
+                            <button onclick="deleteFile('{{ file.name }}')" class="btn btn-sm btn-danger" title="删除"><i class="fa-solid fa-trash-can"></i></button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr id="fileEmptyRow">
+                        <td colspan="4">
+                            <div class="empty-state">
+                                <i class="fa-solid fa-box-open"></i>
+                                <strong>还没有任何文件</strong>
+                                <span>从上面的上传区开始，把你的第一批文件放进来。</span>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div id="gridView" class="file-grid" style="display: none;">
             {% for file in files %}
-            <tr id="row-{{ file.name }}">
-                <td class="file-name-cell">
-                    <i class="{{ file.icon }} file-icon"></i>
-                    <a href="{{ url_for('main.download_file', filename=file.name) }}" class="file-link" title="{{ file.name }}">{{ file.name }}</a>
-                </td>
-                <td data-sort="{{ file.size_raw }}">{{ file.size }}</td>
-                <td>{{ file.modified }}</td>
-                <td class="actions">
-                    <button onclick="analyzeFile('{{ file.name }}')" class="btn btn-sm btn-outline" title="分析"><i class="fa-solid fa-microscope"></i></button>
+            <div class="file-card" id="card-{{ file.name }}" data-name="{{ file.name }}">
+                <div class="file-card-preview" onclick="analyzeFile('{{ file.name }}')">
+                    <i class="{{ file.icon }}" style="font-size: 3.5rem; color: var(--accent);"></i>
+                </div>
+                <div class="file-card-info">
+                    <div class="file-card-name">{{ file.name }}</div>
+                    <div class="file-card-meta">{{ file.size }} · {{ file.modified }}</div>
+                </div>
+                <div class="file-card-actions">
+                    <button class="card-action-btn" onclick="analyzeFile('{{ file.name }}')" title="分析"><i class="fa-solid fa-microscope"></i></button>
                     {% if onlyoffice_url and file.name.split('.')[-1].lower() in office_extensions %}
-                        <a href="{{ url_for('main.onlyoffice_editor', filename=file.name) }}" class="btn btn-sm btn-outline" style="color: var(--accent);" title="编辑" target="_blank"><i class="fa-solid fa-pen-to-square"></i></a>
+                        <a href="{{ url_for('main.onlyoffice_editor', filename=file.name) }}" class="card-action-btn" style="color: var(--accent);" title="编辑" target="_blank"><i class="fa-solid fa-pen-to-square"></i></a>
                     {% endif %}
-                    <button onclick='shareItem("file", {{ file.name|tojson }}, this)' class="btn btn-sm btn-outline" title="分享"><i class="fa-solid fa-share-nodes"></i></button>
-                    <button onclick="deleteFile('{{ file.name }}')" class="btn btn-sm btn-danger" title="删除"><i class="fa-solid fa-trash-can"></i></button>
-                </td>
-            </tr>
+                    <button class="card-action-btn" onclick='shareItem("file", {{ file.name|tojson }}, this)' title="分享"><i class="fa-solid fa-share-nodes"></i></button>
+                    <button class="card-action-btn danger" onclick="deleteFile('{{ file.name }}')" title="删除"><i class="fa-solid fa-trash-can"></i></button>
+                </div>
+            </div>
+            {% else %}
+            <div class="empty-state glass-panel" style="grid-column: 1 / -1;">
+                <i class="fa-solid fa-box-open"></i>
+                <strong>网格视图里也暂时是空的</strong>
+                <span>上传几份文件之后，这里会很适合快速浏览与挑选。</span>
+            </div>
             {% endfor %}
-        </tbody>
-    </table>
-</div>
+        </div>
+    </section>
 
-<!-- Grid View -->
-<div id="gridView" class="file-grid" style="display: none;">
-    {% for file in files %}
-    <div class="file-card" id="card-{{ file.name }}" data-name="{{ file.name }}">
-        <div class="file-card-preview" onclick="analyzeFile('{{ file.name }}')">
-            <i class="{{ file.icon }}" style="font-size: 3.5rem; color: var(--accent);"></i>
-        </div>
-        <div class="file-card-info">
-            <div class="file-card-name">{{ file.name }}</div>
-            <div class="file-card-meta">{{ file.size }} · {{ file.modified }}</div>
-        </div>
-        <div class="file-card-actions">
-            <button class="card-action-btn" onclick="analyzeFile('{{ file.name }}')" title="分析"><i class="fa-solid fa-microscope"></i></button>
-            {% if onlyoffice_url and file.name.split('.')[-1].lower() in office_extensions %}
-                <a href="{{ url_for('main.onlyoffice_editor', filename=file.name) }}" class="card-action-btn" style="color: var(--accent);" title="编辑" target="_blank"><i class="fa-solid fa-pen-to-square"></i></a>
-            {% endif %}
-            <button class="card-action-btn" onclick='shareItem("file", {{ file.name|tojson }}, this)' title="分享"><i class="fa-solid fa-share-nodes"></i></button>
-            <button class="card-action-btn danger" onclick="deleteFile('{{ file.name }}')" title="删除"><i class="fa-solid fa-trash-can"></i></button>
-        </div>
-    </div>
-    {% endfor %}
-</div>
-
-<!-- Analysis Modal -->
-<div class="modal-overlay" id="analysisModal">
-    <div class="modal glass-panel">
-        <div class="modal-header">
-            <h3><i class="fa-solid fa-chart-pie"></i> 文件分析报告: <span id="targetFileName" style="color: var(--accent);"></span></h3>
-            <button class="close-btn" onclick="closeModal()">&times;</button>
-        </div>
-        <div id="analysisContent" class="analysis-grid">
-            <!-- Content loaded via JS -->
+    <div class="modal-overlay" id="analysisModal">
+        <div class="modal glass-panel">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-chart-pie"></i> 文件分析报告: <span id="targetFileName" style="color: var(--accent);"></span></h3>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <div id="analysisContent" class="analysis-grid">
+            </div>
         </div>
     </div>
 </div>
@@ -169,6 +234,12 @@
     const fileTableBody = document.getElementById('fileTableBody');
     const clearSearch = document.getElementById('clearSearch');
     const fileCards = document.querySelectorAll('.file-card');
+    const heroFileCount = document.getElementById('heroFileCount');
+
+    function updateVisibleCounts(count) {
+        document.getElementById('fileCount').innerText = count;
+        if (heroFileCount) heroFileCount.innerText = count;
+    }
 
     fileSearch.addEventListener('input', (e) => {
         const term = e.target.value.toLowerCase();
@@ -189,7 +260,7 @@
             card.style.display = fileName.includes(term) ? '' : 'none';
         });
 
-        document.getElementById('fileCount').innerText = visibleCount;
+        updateVisibleCounts(visibleCount);
     });
 
     clearSearch.addEventListener('click', () => {
@@ -313,7 +384,8 @@
                 
                 // Update count
                 const countSpan = document.getElementById('fileCount');
-                countSpan.innerText = parseInt(countSpan.innerText) - 1;
+                const nextCount = Math.max(0, parseInt(countSpan.innerText, 10) - 1);
+                updateVisibleCounts(nextCount);
             } else {
                 showToast(result.message, 'error');
             }

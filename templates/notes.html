@@ -3,54 +3,104 @@
 {% block title %}笔记管理 - NexFile{% endblock %}
 
 {% block content %}
-<div class="glass-panel">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-        <h2 style="margin: 0;"><i class="fa-solid fa-book-open"></i> Markdown 笔记</h2>
-        <div style="display: flex; align-items: center; gap: 1rem;">
+<div class="page-shell">
+    <section class="glass-panel page-hero">
+        <div class="page-hero-top">
+            <div>
+                <div class="page-eyebrow"><i class="fa-solid fa-pen-nib"></i> Markdown Studio</div>
+                <h1 class="page-title gradient-text">笔记管理更像一个轻盈的写作工作台</h1>
+                <p class="page-subtitle">把搜索、新建、查看、编辑和分享整理到更聚焦的布局里。你能更快找到想改的内容，也更容易把一条笔记发给别人。</p>
+            </div>
+            <div class="hero-actions">
+                <a href="{{ url_for('main.create_note') }}" class="btn btn-primary" style="width: auto; white-space: nowrap;"><i class="fa-solid fa-plus"></i> 新建笔记</a>
+                <button type="button" class="btn btn-ghost" style="width: auto;" onclick="document.getElementById('noteSearch').focus()"><i class="fa-solid fa-magnifying-glass"></i> 搜索笔记</button>
+            </div>
+        </div>
+        <div class="stat-grid" style="margin-top: 1.5rem;">
+            <div class="stat-card">
+                <div class="stat-label">笔记总数</div>
+                <div class="stat-value" id="noteHeroCount">{{ notes|length }}</div>
+                <div class="stat-hint">支持标题搜索与分享链接复制</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">适用场景</div>
+                <div class="stat-value">记录 / 草稿 / 文档</div>
+                <div class="stat-hint">从临时想法到长期资料都能接住</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">操作节奏</div>
+                <div class="stat-value">查看、编辑、分享一气呵成</div>
+                <div class="stat-hint">更少跳转，更少干扰</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="glass-panel toolbar-card">
+        <div class="toolbar-cluster">
             <div class="search-container">
                 <i class="fa-solid fa-search search-icon"></i>
-                <input type="text" id="noteSearch" class="search-input" placeholder="搜索笔记...">
+                <input type="text" id="noteSearch" class="search-input" placeholder="搜索笔记标题...">
                 <button id="clearSearch" class="clear-search-btn" style="display: none;"><i class="fa-solid fa-xmark"></i></button>
             </div>
-            <a href="{{ url_for('main.create_note') }}" class="btn btn-primary" style="width: auto; white-space: nowrap;"><i class="fa-solid fa-plus"></i> 新建笔记</a>
         </div>
-    </div>
-    
-    <div class="table-responsive">
-        <table>
-            <thead>
-                <tr>
-                    <th onclick="sortTable(0)" style="cursor: pointer;" title="点击排序"><i class="fa-solid fa-sort"></i> 笔记标题</th>
-                    <th onclick="sortTable(1)" style="cursor: pointer;" title="点击排序"><i class="fa-solid fa-sort"></i> 最后修改</th>
-                    <th style="min-width: 200px;">操作</th>
-                </tr>
-            </thead>
-            <tbody id="noteTableBody">
-                {% for note in notes %}
-                <tr id="row-{{ note.filename }}">
-                    <td class="note-title-cell">
-                        <i class="fa-brands fa-markdown" style="color: var(--accent); margin-right: 0.75rem;"></i>
-                        <a href="{{ url_for('main.view_note', filename=note.filename) }}" class="note-link">{{ note.title }}</a>
-                        {% if note.share_id %}
-                            <button onclick='copyShareLink({{ note.share_id|tojson }}, "note")' class="share-badge" title="复制链接"><i class="fa-solid fa-link"></i> 已分享</button>
-                        {% endif %}
-                    </td>
-                    <td>{{ note.modified }}</td>
-                    <td class="actions">
-                        <a href="{{ url_for('main.view_note', filename=note.filename) }}" class="btn btn-sm btn-outline" title="查看"><i class="fa-solid fa-eye"></i></a>
-                        <a href="{{ url_for('main.edit_note', filename=note.filename) }}" class="btn btn-sm btn-outline" style="color: var(--accent-2);" title="编辑"><i class="fa-solid fa-pen"></i></a>
-                        <button data-filename="{{ note.filename }}" onclick='shareItem("note", {{ note.filename|tojson }}, this)' class="btn btn-sm btn-outline" title="分享"><i class="fa-solid fa-share-nodes"></i></button>
-                        <button data-filename="{{ note.filename }}" onclick="deleteNote(this)" class="btn btn-sm btn-danger" title="删除"><i class="fa-solid fa-trash"></i></button>
-                    </td>
-                </tr>
-                {% else %}
-                <tr id="emptyRow">
-                    <td colspan="3" style="text-align: center; color: #94a3b8; padding: 2rem;">暂无笔记，点击上方“新建笔记”开始创作。</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+        <div class="toolbar-cluster">
+            <span class="utility-pill"><i class="fa-solid fa-book-open"></i> 当前显示 <span id="noteVisibleCount" style="color: var(--text-primary); font-weight: 700;">{{ notes|length }}</span> 篇</span>
+        </div>
+    </section>
+
+    <section class="glass-panel surface-card" style="padding: 0;">
+        <div class="section-head" style="padding: 1.2rem 1.2rem 0;">
+            <div class="section-title">
+                <i class="fa-brands fa-markdown" style="color: var(--accent-light);"></i>
+                <div>
+                    <h2>Markdown 笔记</h2>
+                    <div class="section-kicker">适合沉淀知识，也适合快速写完就分享出去。</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th onclick="sortTable(0)" style="cursor: pointer;" title="点击排序"><i class="fa-solid fa-sort"></i> 笔记标题</th>
+                        <th onclick="sortTable(1)" style="cursor: pointer;" title="点击排序"><i class="fa-solid fa-sort"></i> 最后修改</th>
+                        <th style="min-width: 200px;">操作</th>
+                    </tr>
+                </thead>
+                <tbody id="noteTableBody">
+                    {% for note in notes %}
+                    <tr id="row-{{ note.filename }}">
+                        <td class="note-title-cell">
+                            <i class="fa-brands fa-markdown" style="color: var(--accent); margin-right: 0.75rem;"></i>
+                            <a href="{{ url_for('main.view_note', filename=note.filename) }}" class="note-link">{{ note.title }}</a>
+                            {% if note.share_id %}
+                                <button onclick='copyShareLink({{ note.share_id|tojson }}, "note")' class="share-badge" title="复制链接"><i class="fa-solid fa-link"></i> 已分享</button>
+                            {% endif %}
+                        </td>
+                        <td>{{ note.modified }}</td>
+                        <td class="actions">
+                            <a href="{{ url_for('main.view_note', filename=note.filename) }}" class="btn btn-sm btn-outline" title="查看"><i class="fa-solid fa-eye"></i></a>
+                            <a href="{{ url_for('main.edit_note', filename=note.filename) }}" class="btn btn-sm btn-outline" style="color: var(--accent);" title="编辑"><i class="fa-solid fa-pen"></i></a>
+                            <button data-filename="{{ note.filename }}" onclick='shareItem("note", {{ note.filename|tojson }}, this)' class="btn btn-sm btn-outline" title="分享"><i class="fa-solid fa-share-nodes"></i></button>
+                            <button data-filename="{{ note.filename }}" onclick="deleteNote(this)" class="btn btn-sm btn-danger" title="删除"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr id="emptyRow">
+                        <td colspan="3">
+                            <div class="empty-state">
+                                <i class="fa-solid fa-feather-pointed"></i>
+                                <strong>还没有任何笔记</strong>
+                                <span>点击右上角“新建笔记”，从第一条 Markdown 开始。</span>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
 </div>
 {% endblock %}
 
@@ -60,6 +110,13 @@
     const noteSearch = document.getElementById('noteSearch');
     const noteTableBody = document.getElementById('noteTableBody');
     const clearSearch = document.getElementById('clearSearch');
+    const noteVisibleCount = document.getElementById('noteVisibleCount');
+    const noteHeroCount = document.getElementById('noteHeroCount');
+
+    function updateNoteCounts(count) {
+        if (noteVisibleCount) noteVisibleCount.innerText = count;
+        if (noteHeroCount) noteHeroCount.innerText = count;
+    }
 
     if (noteSearch && noteTableBody) {
         noteSearch.addEventListener('input', function(e) {
@@ -78,6 +135,7 @@
                     row.style.display = 'none';
                 }
             });
+            updateNoteCounts(visibleCount);
             
             let emptyRow = document.getElementById('emptyRow');
             if (visibleCount === 0 && rows.length > 0) {
@@ -120,8 +178,9 @@
                 showToast("笔记删除成功", 'success');
                 const row = btn.closest('tr');
                 if(row) row.remove();
-                
                 const tbody = document.getElementById('noteTableBody');
+                const visibleRows = tbody.querySelectorAll('tr:not(#emptyRow)');
+                updateNoteCounts(visibleRows.length);
                 if(tbody.querySelectorAll('tr:not(#emptyRow)').length === 0) {
                     let emptyRow = document.getElementById('emptyRow');
                     if (!emptyRow) {

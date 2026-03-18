@@ -3,53 +3,117 @@
 {% block title %}回收站 - NexFile{% endblock %}
 
 {% block content %}
-<div class="glass-panel">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-        <h2 style="margin: 0;"><i class="fa-solid fa-trash-can"></i> 回收站</h2>
-        <div style="display: flex; gap: 0.75rem;">
-            <button onclick="clearTrash()" class="btn btn-danger" style="width: auto;"><i class="fa-solid fa-fire"></i> 清空回收站</button>
+<div class="page-shell">
+    <section class="glass-panel page-hero">
+        <div class="page-hero-top">
+            <div>
+                <div class="page-eyebrow"><i class="fa-solid fa-trash-can-arrow-up"></i> Recovery Zone</div>
+                <h1 class="page-title gradient-text">回收站不只是临时堆放区，也是一层恢复缓冲</h1>
+                <p class="page-subtitle">你可以先把误删内容找回来，再决定是否彻底清理。操作顺序和状态信息都尽量做得更直白，减少误操作压力。</p>
+            </div>
+            <div class="hero-actions">
+                <button onclick="clearTrash()" class="btn btn-danger" style="width: auto;"><i class="fa-solid fa-fire"></i> 清空回收站</button>
+            </div>
         </div>
-    </div>
+        <div class="stat-grid" style="margin-top: 1.5rem;">
+            <div class="stat-card">
+                <div class="stat-label">待处理条目</div>
+                <div class="stat-value" id="trashHeroCount">{{ items|length }}</div>
+                <div class="stat-hint">还原后会立即从列表中移除</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">恢复方式</div>
+                <div class="stat-value">一键还原</div>
+                <div class="stat-hint">保留原有来源类型信息</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">风险操作</div>
+                <div class="stat-value">永久删除</div>
+                <div class="stat-hint">不可撤销，执行前会再次确认</div>
+            </div>
+        </div>
+    </section>
 
-    <div class="table-responsive">
-        <table>
-            <thead>
-                <tr>
-                    <th>文件名</th>
-                    <th>原始位置 / 类型</th>
-                    <th>删除时间</th>
-                    <th style="min-width: 150px;">操作</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for item in items %}
-                <tr id="row-{{ item.filename }}">
-                    <td>
-                        <i class="fa-solid {{ 'fa-file' if item.type == 'file' else 'fa-book' }}" style="color: var(--text-muted); margin-right: 0.75rem;"></i>
-                        {{ item.original_name }}
-                    </td>
-                    <td style="color: var(--text-muted); font-size: 0.85rem;">
-                        {{ '文件' if item.type == 'file' else '笔记' }}
-                    </td>
-                    <td>{{ item.deleted_at }}</td>
-                    <td class="actions">
-                        <button onclick="restoreItem('{{ item.filename }}')" class="btn btn-sm btn-outline" style="color: var(--success);" title="还原"><i class="fa-solid fa-rotate-left"></i> 还原</button>
-                        <button onclick="permDelete('{{ item.filename }}')" class="btn btn-sm btn-danger" title="彻底删除"><i class="fa-solid fa-xmark"></i></button>
-                    </td>
-                </tr>
-                {% else %}
-                <tr>
-                    <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 2rem;">回收站是空的。</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+    <section class="glass-panel surface-card" style="padding: 0;">
+        <div class="section-head" style="padding: 1.2rem 1.2rem 0;">
+            <div class="section-title">
+                <i class="fa-solid fa-clock-rotate-left" style="color: var(--accent-light);"></i>
+                <div>
+                    <h2>待恢复项目</h2>
+                    <div class="section-kicker">先判断是否要恢复，再决定是否彻底清理。</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>文件名</th>
+                        <th>原始位置 / 类型</th>
+                        <th>删除时间</th>
+                        <th style="min-width: 150px;">操作</th>
+                    </tr>
+                </thead>
+                <tbody id="trashTableBody">
+                    {% for item in items %}
+                    <tr id="row-{{ item.filename }}">
+                        <td>
+                            <i class="fa-solid {{ 'fa-file' if item.type == 'file' else 'fa-book' }}" style="color: var(--text-muted); margin-right: 0.75rem;"></i>
+                            {{ item.original_name }}
+                        </td>
+                        <td style="color: var(--text-muted); font-size: 0.85rem;">
+                            {{ '文件' if item.type == 'file' else '笔记' }}
+                        </td>
+                        <td>{{ item.deleted_at }}</td>
+                        <td class="actions">
+                            <button onclick="restoreItem('{{ item.filename }}')" class="btn btn-sm btn-outline" style="color: var(--success);" title="还原"><i class="fa-solid fa-rotate-left"></i> 还原</button>
+                            <button onclick="permDelete('{{ item.filename }}')" class="btn btn-sm btn-danger" title="彻底删除"><i class="fa-solid fa-xmark"></i></button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr id="trashEmptyRow">
+                        <td colspan="4">
+                            <div class="empty-state">
+                                <i class="fa-solid fa-trash-can"></i>
+                                <strong>回收站现在是空的</strong>
+                                <span>删除的文件或笔记会先来到这里，方便你再做一次确认。</span>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
+    function updateTrashCount() {
+        const rows = document.querySelectorAll('#trashTableBody tr[id^="row-"]');
+        const count = rows.length;
+        const heroCount = document.getElementById('trashHeroCount');
+        if (heroCount) heroCount.innerText = count;
+
+        if (count === 0 && !document.getElementById('trashEmptyRow')) {
+            const tbody = document.getElementById('trashTableBody');
+            const row = document.createElement('tr');
+            row.id = 'trashEmptyRow';
+            row.innerHTML = `
+                <td colspan="4">
+                    <div class="empty-state">
+                        <i class="fa-solid fa-trash-can"></i>
+                        <strong>回收站现在是空的</strong>
+                        <span>删除的文件或笔记会先来到这里，方便你再做一次确认。</span>
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(row);
+        }
+    }
+
     async function restoreItem(filename) {
         try {
             const response = await fetch(`/trash/restore/${encodeURIComponent(filename)}`, { method: 'POST' });
@@ -57,9 +121,7 @@
             if(result.success) {
                 showToast(result.message, 'success');
                 document.getElementById(`row-${filename}`).remove();
-                if (document.querySelectorAll('tbody tr:not(:last-child)').length === 0 && document.querySelectorAll('tbody tr').length === 1) {
-                    location.reload();
-                }
+                updateTrashCount();
             } else {
                 showToast(result.message, 'error');
             }
@@ -76,6 +138,7 @@
             if(result.success) {
                 showToast(result.message, 'success');
                 document.getElementById(`row-${filename}`).remove();
+                updateTrashCount();
             } else {
                 showToast(result.message, 'error');
             }

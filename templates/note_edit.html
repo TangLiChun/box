@@ -9,7 +9,7 @@
     .editor-container {
         display: flex;
         gap: 1.5rem;
-        height: calc(100vh - 280px);
+        height: calc(100vh - 360px);
         min-height: 400px;
     }
     
@@ -17,8 +17,8 @@
         flex: 1;
         display: flex;
         flex-direction: column;
-        background: rgba(0, 0, 0, 0.2);
-        border-radius: 8px;
+        background: rgba(0, 0, 0, 0.18);
+        border-radius: 18px;
         border: 1px solid var(--border-default);
         padding: 1rem;
         min-height: 0;
@@ -38,7 +38,7 @@
         flex-grow: 1;
         background: transparent;
         border: 1px solid var(--border-default);
-        border-radius: 8px;
+        border-radius: 14px;
         color: var(--text-primary);
         padding: 1rem;
         font-family: 'Consolas', 'Monaco', monospace;
@@ -54,12 +54,12 @@
     .title-input {
         width: 100%;
         border: 1px solid var(--accent);
-        background: rgba(0,0,0,0.1);
-        font-size: 1.2rem;
-        font-weight: bold;
+        background: rgba(0,0,0,0.08);
+        font-size: 1.15rem;
+        font-weight: 700;
         color: var(--text-primary);
         padding: 0.75rem 1rem;
-        border-radius: 8px;
+        border-radius: 14px;
         outline: none;
     }
 
@@ -85,49 +85,91 @@
     .markdown-body h1, .markdown-body h2, .markdown-body h3 { border-bottom: 1px solid var(--border-default); padding-bottom: 0.5rem; margin-top: 1.5rem; color: var(--accent); }
     .markdown-body pre { background: #1e293b; padding: 1rem; border-radius: 8px; }
     .markdown-body blockquote { border-left: 4px solid var(--accent); padding-left: 1rem; color: var(--text-muted); }
+
+    .editor-meta-bar {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        margin-top: 1rem;
+    }
+
+    @media (max-width: 768px) {
+        .editor-container {
+            height: auto;
+        }
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-<!-- Page Actions & Title -->
-<div class="glass-panel" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding: 1rem 1.5rem;">
-    <div style="display: flex; align-items: center; gap: 1rem;">
-        <h2 style="margin: 0;"><i class="fa-solid fa-{{ 'pen' if is_edit else 'plus' }}"></i> {{ '编辑笔记' if is_edit else '新建笔记' }}</h2>
-        <div id="save-status" title="状态" style="width: 10px; height: 10px; border-radius: 50%; background: var(--success);"></div>
-        <span id="dirty-msg" style="color: var(--warning); font-size: 0.8rem; opacity: 0;"><i class="fa-solid fa-circle-exclamation"></i> 未保存</span>
-    </div>
-    <div style="display: flex; align-items: center; gap: 10px;">
-        <button type="submit" form="noteForm" class="btn btn-primary btn-sm" id="saveBtn"><i class="fa-solid fa-floppy-disk"></i> 保存</button>
-        <a href="{{ url_for('main.notes') }}" class="btn btn-outline btn-sm"><i class="fa-solid fa-xmark"></i> 取消</a>
-    </div>
-</div>
+<div class="page-shell">
+    <section class="glass-panel page-hero">
+        <div class="page-hero-top">
+            <div>
+                <div class="page-eyebrow"><i class="fa-solid fa-pen-ruler"></i> Writing Desk</div>
+                <h1 class="page-title gradient-text">{{ '编辑笔记，让修改和预览同时可见' if is_edit else '新建笔记，从标题到预览一口气写完' }}</h1>
+                <p class="page-subtitle">左侧专注输入，右侧即时预览。保存状态、快捷键和常用 Markdown 插入按钮都尽量放在手边，不打断写作流。</p>
+            </div>
+            <div class="hero-actions">
+                <button type="submit" form="noteForm" class="btn btn-primary" style="width: auto;" id="saveBtn"><i class="fa-solid fa-floppy-disk"></i> 保存笔记</button>
+                <a href="{{ url_for('main.notes') }}" class="btn btn-ghost" style="width: auto;"><i class="fa-solid fa-arrow-left"></i> 返回列表</a>
+            </div>
+        </div>
+        <div class="editor-meta-bar">
+            <span class="utility-pill"><i class="fa-solid fa-keyboard"></i> 支持 `Ctrl/Cmd + S` 快速保存</span>
+            <span class="utility-pill"><i class="fa-solid fa-circle" id="save-status" style="font-size: 0.55rem; color: var(--success);"></i> <span id="dirty-msg" style="opacity: 0;">内容未保存</span><span id="save-clean-msg">当前已保存</span></span>
+            <span class="utility-pill"><i class="fa-brands fa-markdown"></i> Markdown 即时预览</span>
+        </div>
+    </section>
 
-<form action="{{ url_for('main.edit_note', filename=original_filename) if is_edit else url_for('main.create_note') }}" method="post" id="noteForm" style="display: flex; flex-direction: column; gap: 1rem; flex-grow: 1;">
-    <div class="glass-panel" style="padding: 1rem;">
-        <input type="text" id="title" name="title" class="title-input" required 
-               value="{{ title if is_edit else '' }}"
-               placeholder="输入目录/标题 (例如: 学习/Python笔记)...">
-    </div>
-    
-    <div class="editor-container">
-        <div class="editor-pane">
-            <div class="editor-toolbar">
-                <button type="button" class="toolbar-btn" onclick="insertTag('**', '**')" title="粗体"><i class="fa-solid fa-bold"></i></button>
-                <button type="button" class="toolbar-btn" onclick="insertTag('*', '*')" title="斜体"><i class="fa-solid fa-italic"></i></button>
-                <button type="button" class="toolbar-btn" onclick="insertTag('# ', '')" title="标题"><i class="fa-solid fa-heading"></i></button>
-                <button type="button" class="toolbar-btn" onclick="insertTag('```\n', '\n```')" title="代码块"><i class="fa-solid fa-code"></i></button>
+    <form action="{{ url_for('main.edit_note', filename=original_filename) if is_edit else url_for('main.create_note') }}" method="post" id="noteForm" style="display: flex; flex-direction: column; gap: 1rem; flex-grow: 1;">
+        <section class="glass-panel">
+            <div class="section-head">
+                <div class="section-title">
+                    <i class="fa-solid fa-heading" style="color: var(--accent-light);"></i>
+                    <div>
+                        <h2>{{ '笔记标题' if is_edit else '先给这条笔记一个名字' }}</h2>
+                        <div class="section-kicker">支持目录风格命名，例如 `学习/Python笔记`。</div>
+                    </div>
+                </div>
             </div>
-            <textarea id="noteContent" name="content" class="content-textarea" required 
-                      placeholder="支持 Markdown 语法..." oninput="updatePreview(); setDirty(true)">{{ content if is_edit else '' }}</textarea>
-        </div>
-        
-        <div class="preview-pane">
-            <div id="preview-content" class="markdown-body">
-                <!-- Preview will render here -->
+            <input type="text" id="title" name="title" class="title-input" required
+                   value="{{ title if is_edit else '' }}"
+                   placeholder="输入目录/标题 (例如: 学习/Python笔记)...">
+        </section>
+
+        <section class="glass-panel surface-card">
+            <div class="section-head">
+                <div class="section-title">
+                    <i class="fa-solid fa-pen-to-square" style="color: var(--accent-light);"></i>
+                    <div>
+                        <h2>编辑与预览</h2>
+                        <div class="section-kicker">左边写，右边看，减少保存前来回切换。</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="editor-container">
+                <div class="editor-pane">
+                    <div class="editor-toolbar">
+                        <button type="button" class="toolbar-btn" onclick="insertTag('**', '**')" title="粗体"><i class="fa-solid fa-bold"></i></button>
+                        <button type="button" class="toolbar-btn" onclick="insertTag('*', '*')" title="斜体"><i class="fa-solid fa-italic"></i></button>
+                        <button type="button" class="toolbar-btn" onclick="insertTag('# ', '')" title="标题"><i class="fa-solid fa-heading"></i></button>
+                        <button type="button" class="toolbar-btn" onclick="insertTag('```\n', '\n```')" title="代码块"><i class="fa-solid fa-code"></i></button>
+                    </div>
+                    <textarea id="noteContent" name="content" class="content-textarea" required
+                              placeholder="支持 Markdown 语法..." oninput="updatePreview(); setDirty(true)">{{ content if is_edit else '' }}</textarea>
+                </div>
+                
+                <div class="preview-pane">
+                    <div id="preview-content" class="markdown-body">
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
-</form>
+        </section>
+    </form>
+</div>
 {% endblock %}
 
 {% block scripts %}
@@ -150,13 +192,15 @@
     const saveButton = document.getElementById('saveBtn');
     const saveStatus = document.getElementById('save-status');
     const dirtyMsg = document.getElementById('dirty-msg');
+    const saveCleanMsg = document.getElementById('save-clean-msg');
     
     let isDirty = false;
 
     function setDirty(dirty) {
         isDirty = dirty;
-        saveStatus.style.background = dirty ? 'var(--warning)' : 'var(--success)';
+        saveStatus.style.color = dirty ? 'var(--warning)' : 'var(--success)';
         dirtyMsg.style.opacity = dirty ? '1' : '0';
+        if (saveCleanMsg) saveCleanMsg.style.display = dirty ? 'none' : 'inline';
     }
 
     function updatePreview() {

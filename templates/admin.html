@@ -3,8 +3,44 @@
 {% block title %}后台管理 - NexFile{% endblock %}
 
 {% block content %}
+<div class="page-shell">
+<section class="glass-panel page-hero">
+    <div class="page-hero-top">
+        <div>
+            <div class="page-eyebrow"><i class="fa-solid fa-sliders"></i> Control Center</div>
+            <h1 class="page-title gradient-text">后台管理更像一个可读、可控、可恢复的控制台</h1>
+            <p class="page-subtitle">把账户、系统设置和增量更新整理成更清晰的区块，让你一眼知道当前状态，操作时也更安心。</p>
+        </div>
+        <div class="hero-actions">
+            <button type="button" class="btn btn-primary" style="width: auto;" onclick="document.getElementById('settingsForm').scrollIntoView({ behavior: 'smooth', block: 'start' })">
+                <i class="fa-solid fa-gear"></i> 前往系统设置
+            </button>
+            <button type="button" class="btn btn-ghost" style="width: auto;" onclick="checkForUpdates()">
+                <i class="fa-solid fa-rotate"></i> 检查更新
+            </button>
+        </div>
+    </div>
+    <div class="stat-grid" style="margin-top: 1.5rem;">
+        <div class="stat-card">
+            <div class="stat-label">用户数量</div>
+            <div class="stat-value">{{ users|length }}</div>
+            <div class="stat-hint">集中管理账号与密码修改</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">文档服务</div>
+            <div class="stat-value">{% if onlyoffice_url %}ONLYOFFICE 已配置{% else %}等待配置{% endif %}</div>
+            <div class="stat-hint">{% if onlyoffice_url %}可测试连接并启用在线编辑{% else %}配置后可开启 Office 在线编辑{% endif %}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">升级能力</div>
+            <div class="stat-value">Git 增量更新</div>
+            <div class="stat-hint">支持检查远端提交并尝试自动拉取</div>
+        </div>
+    </div>
+</section>
+
 {% if admin_password_change_required %}
-<div class="glass-panel" style="margin-bottom: 2rem; border: 1px solid rgba(248, 113, 113, 0.45); background: linear-gradient(135deg, rgba(127, 29, 29, 0.36), rgba(30, 41, 59, 0.88));">
+<div class="glass-panel" style="border: 1px solid rgba(248, 113, 113, 0.45); background: linear-gradient(135deg, rgba(127, 29, 29, 0.36), rgba(30, 41, 59, 0.88));">
     <h2><i class="fa-solid fa-triangle-exclamation" style="color: #fda4af;"></i> 请尽快修改管理员密码</h2>
     <p style="margin: 0.75rem 0 1rem; color: #fecdd3; line-height: 1.8;">
         当前 <code>admin</code> 账号仍处于初始化密码状态。为了降低泄露风险，请立即为当前管理员设置一个新的专用密码。
@@ -15,8 +51,16 @@
 </div>
 {% endif %}
 
-<div class="glass-panel" style="margin-bottom: 2rem;">
-    <h2><i class="fa-solid fa-user-plus"></i> 添加新用户</h2>
+<section class="glass-panel">
+    <div class="section-head">
+        <div class="section-title">
+            <i class="fa-solid fa-user-plus" style="color: var(--accent-light);"></i>
+            <div>
+                <h2>添加新用户</h2>
+                <div class="section-kicker">快速创建账号，减少重复输入和跳转。</div>
+            </div>
+        </div>
+    </div>
     <form id="addUserForm" style="display: flex; gap: 1rem; align-items: flex-end;">
         <div class="form-group" style="margin-bottom: 0; flex: 1;">
             <label>用户名</label>
@@ -28,10 +72,18 @@
         </div>
         <button type="submit" class="btn btn-primary" style="width: auto;">添加用户</button>
     </form>
-</div>
+</section>
 
-<div class="glass-panel" style="margin-bottom: 2rem;">
-    <h2><i class="fa-solid fa-gear"></i> 系统设置</h2>
+<section class="glass-panel">
+    <div class="section-head">
+        <div class="section-title">
+            <i class="fa-solid fa-gear" style="color: var(--accent-light);"></i>
+            <div>
+                <h2>系统设置</h2>
+                <div class="section-kicker">把文档服务、回调地址和公告集中在一个更易读的面板里。</div>
+            </div>
+        </div>
+    </div>
     <form id="settingsForm">
         <div class="form-group">
             <label>ONLYOFFICE Document Server 地址</label>
@@ -73,10 +125,18 @@
             <span id="testOOResult" style="font-size: 0.9rem; color: #94a3b8;"></span>
         </div>
     </form>
-</div>
+</section>
 
-<div class="glass-panel" style="margin-bottom: 2rem;">
-    <h2><i class="fa-solid fa-arrows-rotate"></i> 增量更新</h2>
+<section class="glass-panel">
+    <div class="section-head">
+        <div class="section-title">
+            <i class="fa-solid fa-arrows-rotate" style="color: var(--accent-light);"></i>
+            <div>
+                <h2>增量更新</h2>
+                <div class="section-kicker">在 Git 部署下检查远端状态，并给出更具体的升级反馈。</div>
+            </div>
+        </div>
+    </div>
     <p style="margin-top: 0; color: #94a3b8; line-height: 1.7;">
         这个入口只支持 Git 部署下的增量升级。系统会检查远端提交，确认可升级后执行
         <code>git pull --ff-only</code>，并尝试同步安装 <code>requirements.txt</code> 里的依赖。
@@ -93,10 +153,18 @@
     </div>
     <div id="updateMeta" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem; margin-bottom: 1rem;"></div>
     <pre id="updateOutput" class="hex-preview" style="display: none; margin-top: 0; white-space: pre-wrap; word-break: break-word;"></pre>
-</div>
+</section>
 
-<div class="glass-panel">
-    <h2><i class="fa-solid fa-users"></i> 用户列表</h2>
+<section class="glass-panel">
+    <div class="section-head">
+        <div class="section-title">
+            <i class="fa-solid fa-users" style="color: var(--accent-light);"></i>
+            <div>
+                <h2>用户列表</h2>
+                <div class="section-kicker">直接进行密码修改与用户清理，不需要跳离当前页面。</div>
+            </div>
+        </div>
+    </div>
     <div class="table-responsive">
         <table id="userTable">
             <thead>
@@ -122,6 +190,7 @@
             </tbody>
         </table>
     </div>
+</section>
 </div>
 
 <!-- Password Modal -->
