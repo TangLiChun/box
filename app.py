@@ -2,6 +2,7 @@ import os
 import sys
 from flask import Flask, current_app, has_app_context, request, redirect, url_for, session, flash, jsonify, g
 from werkzeug.security import generate_password_hash, check_password_hash
+from flask_gzip import Gzip
 from nexfile.admin import (
     handle_add_user,
     handle_apply_update,
@@ -361,8 +362,20 @@ def create_app(config_overrides=None):
     os.makedirs(app.config['NOTES_FOLDER'], exist_ok=True)
     os.makedirs(app.config['TRASH_FOLDER'], exist_ok=True)
 
+    # Add security headers to all responses
+    @app.after_request
+    def add_security_headers(response):
+        response.headers['X-Content-Type-Options'] = 'nosniff'
+        response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+        response.headers['X-XSS-Protection'] = '1; mode=block'
+        # Basic Content Security Policy allowing self-hosted resources
+        response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;"
+        return response
+
     app.teardown_appcontext(close_connection)
     init_db(app)
+    # Enable gzip compression for all responses
+    Gzip(app)
     app.register_blueprint(main_bp)
     return app
 

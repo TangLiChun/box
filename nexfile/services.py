@@ -8,9 +8,15 @@ from flask import g
 def get_db(database_path):
     db = getattr(g, '_database', None)
     if db is None:
-        db = g._database = sqlite3.connect(database_path)
+        # Enable foreign keys and set timeout
+        db = g._database = sqlite3.connect(
+            database_path,
+            timeout=30.0,  # 30 second timeout for busy connections
+            detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES
+        )
         db.row_factory = sqlite3.Row
         db.execute('PRAGMA foreign_keys = ON;')
+        db.execute('PRAGMA journal_mode = WAL;')  # Write-ahead logging for better concurrency
     return db
 
 
