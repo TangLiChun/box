@@ -1,4 +1,5 @@
 from flask import Blueprint, current_app
+from nexfile.config import ONLYOFFICE_FORMATS
 
 
 main_bp = Blueprint('main', __name__)
@@ -9,10 +10,17 @@ _deps = {}
 def configure_main_blueprint(**deps):
     _deps.clear()
     _deps.update(deps)
+    # Ensure ONLYOFFICE_FORMATS is available
+    _deps['onlyoffice_formats'] = ONLYOFFICE_FORMATS
 
 
 def dep(name):
-    return _deps[name]
+    """Get dependency by name with clearer error message."""
+    try:
+        return _deps[name]
+    except KeyError:
+        raise RuntimeError(f"Dependency '{name}' not configured. "
+                         "Did you call configure_main_blueprint() first?") from None
 
 
 @main_bp.route('/login', methods=['GET', 'POST'])

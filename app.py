@@ -14,6 +14,7 @@ from nexfile.admin import (
 )
 from nexfile.auth import handle_login, handle_logout
 from nexfile.blueprints_main import configure_main_blueprint, main_bp
+from nexfile.config import get_default_config, ONLYOFFICE_FORMATS
 from nexfile.core import (
     build_unique_name,
     format_size,
@@ -24,7 +25,6 @@ from nexfile.core import (
     normalize_managed_filename,
     normalize_note_input,
     parse_dirty_paths_from_porcelain,
-    resolve_runtime_path,
     secure_filename,
     summarize_update_step,
 )
@@ -105,17 +105,6 @@ UPLOAD_FOLDER = None
 NOTES_FOLDER = None
 TRASH_FOLDER = None
 DATABASE = None
-# ONLYOFFICE supported formats and their document types
-ONLYOFFICE_FORMATS = {
-    # Word
-    '.docx': 'word', '.doc': 'word', '.odt': 'word', '.rtf': 'word', '.txt': 'word',
-    # Cell
-    '.xlsx': 'cell', '.xls': 'cell', '.ods': 'cell', '.csv': 'cell',
-    # Slide
-    '.pptx': 'slide', '.ppt': 'slide', '.odp': 'slide',
-    # PDF (usually read-only in ONLYOFFICE Document Server)
-    '.pdf': 'pdf'
-}
 
 # --- Database helpers ---
 
@@ -134,13 +123,7 @@ def sync_compat_path_globals(config):
 
 
 def build_default_app_config():
-    return {
-        'UPLOAD_FOLDER': resolve_runtime_path(BASE_DIR, INSTANCE_DIR, 'uploads', prefer_legacy=True),
-        'NOTES_FOLDER': resolve_runtime_path(BASE_DIR, INSTANCE_DIR, 'notes', prefer_legacy=True),
-        'TRASH_FOLDER': resolve_runtime_path(BASE_DIR, INSTANCE_DIR, 'trash', prefer_legacy=True),
-        'DATABASE': resolve_runtime_path(BASE_DIR, INSTANCE_DIR, 'users.db', prefer_legacy=True),
-        'MAX_CONTENT_LENGTH': 100 * 1024 * 1024,
-    }
+    return get_default_config(BASE_DIR)
 
 
 def get_db():
@@ -347,7 +330,6 @@ configure_main_blueprint(
     move_item_to_trash=move_item_to_trash,
     normalize_managed_filename=normalize_managed_filename,
     normalize_note_input=normalize_note_input,
-    onlyoffice_formats=ONLYOFFICE_FORMATS,
     permanently_delete_trash_item=permanently_delete_trash_item,
     render_admin_dashboard=render_admin_dashboard,
     resolve_item_path=resolve_item_path,
