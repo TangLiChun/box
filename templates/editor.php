@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="onlyoffice-page">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title><?= htmlspecialchars($filename) ?> - ONLYOFFICE Editor</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <script>
+        // Respect system theme preference
+        let savedTheme = localStorage.getItem('nexfile-theme');
+        if (!savedTheme) {
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            savedTheme = prefersDark ? 'dark' : 'light';
+        }
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    </script>
+</head>
+<body>
+    <div class="editor-shell">
+        <div class="editor-chip">
+            <strong><i class="fa-solid fa-file-lines"></i> 正在编辑</strong>
+            <span><?= htmlspecialchars($filename) ?></span>
+        </div>
+        <a href="/" class="back-btn"><i class="fa-solid fa-arrow-left"></i> 返回文件列表</a>
+    </div>
+    <div id="placeholder" class="onlyoffice-placeholder">
+        <div class="loader-shell">
+            <div id="loader" class="loader-block">
+                <div class="loader-ring"></div>
+            </div>
+            <div id="status-msg">正在加载 ONLYOFFICE 编辑器...</div>
+        </div>
+    </div>
+
+    <script type="text/javascript" src="<?= htmlspecialchars($onlyofficeUrl) ?>web-apps/apps/api/documents/api.js" onerror="onApiError()"></script>
+    <script type="text/javascript">
+        function onApiError() {
+            const loader = document.getElementById('loader');
+            if (loader) loader.style.display = 'none';
+            document.getElementById('status-msg').innerHTML = 
+                '<span class="status-error">无法加载 ONLYOFFICE API。<br>' +
+                '请检查设置中的 Document Server 地址是否正确，<br>' +
+                '并确保浏览器可以访问到该地址。</span><br><br>' +
+                '<a href="/" class="back-btn" style="display:inline-block;margin-top:1rem;">' +
+                '<i class="fa-solid fa-arrow-left"></i> 返回文件列表</a>';
+        }
+
+        try {
+            if (typeof DocsAPI !== 'undefined') {
+                // Get current theme and sync with ONLYOFFICE
+                const currentTheme = document.documentElement.getAttribute('data-theme');
+                const isDark = currentTheme === 'dark';
+                
+                // Build the ONLYOFFICE configuration with theme and mobile optimization
+                var config = <?= json_encode($config) ?>;
+                
+                // Sync UI theme
+                config.editorConfig.uiTheme = isDark ? 'theme-dark' : 'theme-light';
+                
+                // Enable compact header on mobile
+                if (window.innerWidth < 768) {
+                    config.editorConfig.customization = config.editorConfig.customization || {};
+                    config.editorConfig.customization.compactHeader = true;
+                }
+                
+                window.docEditor = new DocsAPI.DocEditor("placeholder", config);
+            } else {
+                // Wait a bit more for slow loads
+                setTimeout(() => {
+                    if (typeof DocsAPI === 'undefined') onApiError();
+                }, 5000);
+            }
+        } catch (e) {
+            console.error(e);
+            onApiError();
+        }
+    </script>
+</body>
+</html>
