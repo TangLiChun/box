@@ -67,9 +67,25 @@
     box-sizing: border-box;
 }
 
+/* Smooth scrolling for better UX */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
 :focus-visible {
     outline: 2px solid rgba(125, 211, 252, 0.85);
     outline-offset: 3px;
+    box-shadow: 0 0 0 3px var(--accent-glow);
 }
 
 body {
