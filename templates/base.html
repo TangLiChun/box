@@ -10,7 +10,12 @@
     <meta name="theme-color" content="#060c18">
     <link rel="apple-touch-icon" href="{{ url_for('static', filename='icon-512.png') }}">
     <script>
-        const savedTheme = localStorage.getItem('nexfile-theme') || 'dark';
+        // Respect system theme preference if no saved choice
+        let savedTheme = localStorage.getItem('nexfile-theme');
+        if (!savedTheme) {
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            savedTheme = prefersDark ? 'dark' : 'light';
+        }
         document.documentElement.setAttribute('data-theme', savedTheme);
     </script>
     {% block extra_head %}{% endblock %}
@@ -35,7 +40,7 @@
             </nav>
 
             <div class="sidebar-footer">
-                <button id="themeToggle" class="theme-toggle-btn">
+                <button id="themeToggle" class="theme-toggle-btn" aria-label="切换深色/浅色主题">
                     <i class="fa-solid fa-moon"></i> <span>深色模式</span>
                 </button>
                 <div class="muted-note sidebar-user-chip">

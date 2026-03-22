@@ -939,6 +939,8 @@ small, .text-muted { color: var(--text-secondary); }
     z-index: 160;
     width: 46px;
     height: 46px;
+    min-width: 44px;
+    min-height: 44px;
     border-radius: 14px;
     border: 1px solid var(--border-default);
     background: rgba(8, 16, 30, 0.88);
@@ -951,12 +953,11 @@ small, .text-muted { color: var(--text-secondary); }
 .sidebar-backdrop {
     position: fixed;
     inset: 0;
-    background: rgba(5, 10, 18, 0.55);
-    backdrop-filter: blur(4px);
+    background: rgba(0, 0, 0, 0.6);
     opacity: 0;
     pointer-events: none;
-    transition: opacity var(--duration-base) ease;
-    z-index: 120;
+    z-index: 140;
+    transition: opacity var(--duration-slow) var(--ease-out);
 }
 
 .sidebar-logo {
@@ -1475,7 +1476,7 @@ textarea::placeholder {
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
-    z-index: 10000;
+    z-index: 100000;
 }
 
 .toast {
@@ -2628,7 +2629,7 @@ header h2 {
         width: min(82vw, 320px);
         padding: 1.25rem 0.85rem;
         align-items: stretch;
-        transform: translateX(-110%);
+        transform: translateX(-110%) translateZ(0);
         transition: transform var(--duration-slow) var(--ease-out);
         z-index: 150;
     }
@@ -2819,4 +2820,37 @@ code {
     font-size: 0.85em;
     font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', Consolas, monospace;
     color: var(--accent-light);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ONLYOFFICE Light Theme Support
+   ═══════════════════════════════════════════════════════════════ */
+
+[data-theme='light'] .onlyoffice-page,
+[data-theme='light'] .onlyoffice-page body {
+    background: 
+        radial-gradient(circle at top left, rgba(58, 169, 255, 0.12), transparent 24%),
+        linear-gradient(180deg, #eef3fb 0%, #f4f7fb 100%);
+}
+
+[data-theme='light'] .editor-chip {
+    background: rgba(255, 255, 255, 0.92);
+    border-color: var(--border-default);
+    color: var(--text-primary);
+}
+
+[data-theme='light'] .editor-chip span {
+    color: var(--text-secondary);
+}
+
+[data-theme='light'] .back-btn {
+    background: rgba(255, 255, 255, 0.92);
+    color: var(--text-primary);
+    border-color: var(--border-default);
+}
+
+[data-theme='light'] .back-btn:hover {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+    color: var(--accent);
 }

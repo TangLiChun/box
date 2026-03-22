@@ -28,12 +28,31 @@
         function onApiError() {
             const loader = document.getElementById('loader');
             if (loader) loader.style.display = 'none';
-            document.getElementById('status-msg').innerHTML = '<span class="status-error">无法加载 ONLYOFFICE API。<br>请检查设置中的 Document Server 地址是否正确，<br>并确保浏览器可以访问到该地址。</span>';
+            document.getElementById('status-msg').innerHTML = 
+                '<span class="status-error">无法加载 ONLYOFFICE API。<br>' +
+                '请检查设置中的 Document Server 地址是否正确，<br>' +
+                '并确保浏览器可以访问到该地址。</span><br><br>' +
+                '<a href="{{ url_for("main.index") }}" class="back-btn" style="display:inline-block;margin-top:1rem;">' +
+                '<i class="fa-solid fa-arrow-left"></i> 返回文件列表</a>';
         }
 
         try {
             if (typeof DocsAPI !== 'undefined') {
-                window.docEditor = new DocsAPI.DocEditor("placeholder", {{ config | tojson }});
+                // Get current theme and sync with ONLYOFFICE
+                const currentTheme = document.documentElement.getAttribute('data-theme');
+                const isDark = currentTheme === 'dark';
+                // Enable compact header on mobile for better mobile experience
+                const isMobile = window.innerWidth < 768;
+                // Build the ONLYOFFICE configuration with theme and mobile optimization
+                var config = {{ config | tojson }};
+                // Sync UI theme
+                config.editorConfig.uiTheme = isDark ? 'theme-dark' : 'theme-light';
+                // Enable compact header on mobile
+                if (isMobile) {
+                    config.editorConfig.customization = config.editorConfig.customization || {};
+                    config.editorConfig.customization.compactHeader = true;
+                }
+                window.docEditor = new DocsAPI.DocEditor("placeholder", config);
             } else {
                 // Wait a bit more for slow loads
                 setTimeout(() => {
